@@ -1,0 +1,10 @@
+localhost:5000, http://bust.loca.lt:5000 {
+	proxy /api localhost:8080 {
+		transparent
+		websocket
+	}
+
+	proxy / localhost:3000 {
+		transparent
+	}
+}

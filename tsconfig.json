@@ -1,0 +1,22 @@
+{
+   "compilerOptions": {
+      "lib": [
+         "es5",
+         "es6"
+      ],
+      "target": "ESNext",
+      "module": "commonjs",
+      "esModuleInterop": true,
+      "strict": true,
+      "strictNullChecks": true,
+      "strictBindCallApply": true,
+      "strictFunctionTypes": true,
+      "strictPropertyInitialization": false,
+      "noImplicitAny": true,
+      "moduleResolution": "node",
+      "outDir": "./build",
+      "emitDecoratorMetadata": true,
+      "experimentalDecorators": true,
+      "sourceMap": true
+   }
+}
