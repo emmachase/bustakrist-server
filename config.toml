@@ -1,12 +1,24 @@
 [system]
 name = "BustAKrist"
 listenPort = 8081
+logLevel = "silly"
+
+[krist]
+node = "krist.ceriat.net"
+connectionBounce = 30
+
+pkey = "3d1de19ed9d39ae8e026c46d47f140bfa08c1c6ad9f96c3d1b49408262713ee3-000"
+address = "kek4daddy2"
+names = ["bust", "bustakrist", "bak"]
 
 [game]
 salt = "00000000000000000004bac129769598d1fad2b42859e625729661a32b9c3e71"
 roundDelay = 3 # Seconds (showing the bust of the last round)
 roundPadding = 5 # Seconds (before a round starts)
 history = 40
+
+safetySingle = 0.15
+safetyRound  = 0.3
 
 [chat]
 history = 40

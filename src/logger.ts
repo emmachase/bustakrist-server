@@ -1,7 +1,8 @@
 import winston from "winston";
- 
+import { getConfig } from "./config";
+
 const logger_i = winston.createLogger({
-  level: "debug",
+  level: getConfig().system.logLevel ?? "info",
   format: winston.format.json(),
   transports: [
     new winston.transports.Console({

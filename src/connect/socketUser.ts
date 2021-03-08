@@ -9,6 +9,7 @@ import { getConnection } from "typeorm";
 import { ChatService } from "../services/ChatService";
 import { Subscription } from "rxjs";
 import { GameEvent, GameService } from "../services/GameService";
+import { BalStream, TipStream } from "../services/KristService";
 
 const requestHandlers: Record<RequestCode, (msg: RequestMessage) => void> = {} as any;
 
@@ -173,14 +174,16 @@ export class SocketUser {
             return this.sendMalformed(ErrorDetail.NO_TYPE);
         }
 
-        const handler = requestHandlers[request.type];
-        if (handler) {
-            handler.call(this, new RequestMessage(this.ws, request.id, request.data));
-        } else {
-            return safeSend(this.ws, {
-                ok: false,
-                errorType: ErrorCode.UNKNOWN_TYPE
-            })
+        const rMsg = new RequestMessage(this.ws, request.id, request.data);
+        try {
+            const handler = requestHandlers[request.type];
+            if (handler) {
+                handler.call(this, rMsg);
+            } else {
+                return rMsg.replyFail(ErrorCode.UNKNOWN_TYPE);
+            }
+        } catch {
+            return rMsg.replyFail(ErrorCode.INTERNAL_ERROR);
         }
     }
 
@@ -217,6 +220,37 @@ export class SocketUser {
             }
         }));
 
+        this.subscriptions.push(BalStream.subscribe(async next => {
+            if (this.authedUser?.name === next.user) {
+                await this.refresh();
+                safeSend(this.ws, {
+                    ok: true,
+                    type: UpdateCode.UPDATE_BALANCE,
+                    data: { ...next, newBal: this.authedUser.balance }
+                })
+            }
+        }));
+
+        this.subscriptions.push(TipStream.subscribe(async next => {
+            if (this.authedUser?.name === next.to) {
+                await this.refresh();
+                safeSend(this.ws, {
+                    ok: true,
+                    type: UpdateCode.RECIEVE_TIP,
+                    data: { ...next, newBal: this.authedUser.balance }
+                })
+            }
+        }));
+
+        this.subscriptions.push(GameService.instance.CashoutAlertStream.subscribe(async next => {
+            if (this.authedUser?.id === next.user.id) {
+                safeSend(this.ws, {
+                    ok: true,
+                    type: UpdateCode.ALERT_SAFETY,
+                })
+            }
+        }))
+
         this.subscriptions.push(GameService.instance.GameStream.subscribe(async next => {
             // setTimeout to push to next event tick to let values propogate (specifically balances)
             await this.refresh();
@@ -241,6 +275,8 @@ export class SocketUser {
                         hash: next.hash, newBal
                     }
                 });
+
+                this.sendAuthedGameState();
             } else if (next.type === GameEvent.ADD_PLAYER) {
                 safeSend(this.ws, {
                     ok: true,
@@ -301,6 +337,18 @@ export class SocketUser {
                 from: this.authedUser.name,
                 message: "<left the chat>"
             });
+        }
+    }
+
+    public sendAuthedGameState() {
+        if (this.authedUser) {
+            safeSend(this.ws, {
+                ok: true,
+                type: UpdateCode.UPDATE_PLAYING,
+                data: {
+                    playing: GameService.instance.isPlaying(this.authedUser)
+                }
+            })
         }
     }
 }

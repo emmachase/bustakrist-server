@@ -28,17 +28,6 @@ export class AuthHandlers extends SocketUser {
         }
     })
 
-    @TranscludeMethod
-    public sendAuthedGameState() {
-        safeSend(this.ws, {
-            ok: true,
-            type: UpdateCode.UPDATE_PLAYING,
-            data: {
-                playing: GameService.instance.isPlaying(this.authedUser!)
-            }
-        })
-    }
-
     @RequestHandler(RequestCode.REGISTER)
     public async handleRegister(req: RequestMessage<{
         name: string

@@ -20,7 +20,7 @@ export class User {
     @Column({type: "integer", default: 100000})
     balance: number; // Balance is fixed precision number, 123 means 1.23
 
-    @Column({type: "integer", default: 0})
+    @Column({type: "integer", default: 100000})
     totalIn: number; // Total Krist into this account, including tips
 
     @Column({type: "integer", default: 0})

@@ -1,3 +1,6 @@
+import { getConfig, initConfig } from "./config";
+const config = initConfig();
+
 import "reflect-metadata";
 import chalk from "chalk";
 import {Connection, createConnection, getConnection} from "typeorm";
@@ -6,15 +9,15 @@ import * as fs from "fs";
 import { ExecutedGame } from "./entity/ExecutedGame";
 import { getExpress, initExpress } from "./connect/express";
 import { initSockets } from "./connect/socketmanager";
-import { initConfig } from "./config";
 import { logger } from "./logger";
 import { User } from "./entity/User";
 import { GameService } from "./services/GameService";
 import { calcStats, initializeChain } from "./util/database";
+import { KristService } from "./services/KristService";
+import { SECOND, sleepFor } from "./util/time";
+import { kst, kstF2 } from "./util/chalkFormatters";
 
 logger.debug("App initializing...");
-
-const config = initConfig();
 
 createConnection().then(async connection => {
 
@@ -55,6 +58,23 @@ createConnection().then(async connection => {
     // connection.manager.save(emma);
     // connection.manager.save(threedeesix);
 
+    while (true) {
+        try {
+            await KristService.instance.tryConnect();
+            break;
+        } catch (e) {
+            logger.error("Unable to connect to Krist, trying again in " + getConfig().krist.connectionBounce + " seconds");
+            await sleepFor(getConfig().krist.connectionBounce * SECOND);
+        }
+    }
+
+    { // Scope for unused variables
+        const totalBalance = await KristService.instance.getBalance();
+        logger.info(chalk`KstWallet Balance: ${kst(totalBalance)}`);
+
+        const allocatedBalance = await KristService.instance.getAllocatedBalance();
+        logger.info(chalk`Allocated Balance: ${kstF2(allocatedBalance)} ({cyan ${(allocatedBalance / totalBalance).toFixed(2)}}%)`);
+    }
 
     initExpress();
     initSockets();

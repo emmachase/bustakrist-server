@@ -9,7 +9,7 @@ import { User } from "../entity/User";
 import { logger } from "../logger";
 import { fetchHistory, fetchNextGameID } from "../util/database";
 import { SECOND, sleepFor } from "../util/time";
-import { calculateGameResult, getRoundLength, getScoreAt } from "./ScoreService";
+import { calculateGameResult, getIndividualSafety, getRoundLength, getRoundSafety, getScoreAt } from "./ScoreService";
 import { DateTime, Duration } from "luxon";
 import { HistoricalBet } from "../entity/HistoricalBet";
 import { AsyncPool } from "../util/AsyncPool";
@@ -61,6 +61,10 @@ export class GameService {
     public UserPlayingStream: Subject<{
         user: User
         isPlaying: "active" | "pending" | boolean
+    }> = new Subject();
+
+    public CashoutAlertStream: Subject<{
+        user: User
     }> = new Subject();
 
     private nextGameID: number;
@@ -170,16 +174,18 @@ export class GameService {
         }
     }
 
-    public pullWager(user: User): boolean {
-        const pendingIdx = this.pendingWagers.findIndex(wager => wager.player.id === user.id);
-        if (pendingIdx !== -1) {
-            this.pendingWagers.splice(pendingIdx, 1);
-            this.UserPlayingStream.next({
-                user: user,
-                isPlaying: false
-            });
+    public pullWager(user: User, enforceMultiplier?: number): boolean {
+        if (enforceMultiplier === undefined) {
+            const pendingIdx = this.pendingWagers.findIndex(wager => wager.player.id === user.id);
+            if (pendingIdx !== -1) {
+                this.pendingWagers.splice(pendingIdx, 1);
+                this.UserPlayingStream.next({
+                    user: user,
+                    isPlaying: false
+                });
 
-            return true;
+                return true;
+            }
         }
 
         const active = this.activeWagers.find(wager => wager.player.id === user.id);
@@ -187,7 +193,7 @@ export class GameService {
             if (active.exited) {
                 return false; // Already pulled out
             } else {
-                const position = this.getCurrentMultiplier();
+                const position = enforceMultiplier ?? this.getCurrentMultiplier();
                 active.cashout = Math.min(active.cashout, Math.max(position, 100));
                 active.exited = true;
 
@@ -237,7 +243,7 @@ export class GameService {
         gameEntity.id = this.currentGameID;
         gameEntity.hash = gameHash;
         gameEntity.bustedAt = bustAt;
-        gameEntity.totalWagered = 0; // TODO
+        gameEntity.totalWagered = 0;
         getConnection().manager.save(gameEntity);
 
         this.GameStream.next({
@@ -249,13 +255,28 @@ export class GameService {
         // Bets are locked in as soon as the countdown starts (more can come in but none can back out)
         await this.drainPendingWagers();
 
+        // Enact round safety
+        const totalWagered = this.countTotalWagered();
+        if (totalWagered > 0) {
+            const safetyCashout = await getRoundSafety(totalWagered);
+            const length = getRoundLength(safetyCashout);
+            const delta = DateTime.now().minus(this.currentStartDate).toMillis();
+            this.cashoutPool.addTimeout(-1, () => {
+                for (const wager of this.activeWagers) {
+                    if (this.pullWager(wager.player, safetyCashout)) {
+                        this.CashoutAlertStream.next({ user: wager.player });
+                    }
+                }
+            }, length - delta);
+        }
+
         // Sleep until the game has busted
         await sleepFor(bustAtTime - +new Date());
 
         this.cashoutPool.clear();
 
         // Fulfill the wagers as soon as the bust happens
-        const [totalWagered, totalProfit] = await this.fulfillWagers(bustAt);
+        const totalProfit = await this.fulfillWagers(bustAt);
         gameEntity.totalWagered = totalWagered;
         gameEntity.totalProfit = totalProfit;
         getConnection().manager.save(gameEntity); // Finalize the executed game
@@ -310,17 +331,30 @@ export class GameService {
     }
 
     private async drainWager(manager: EntityManager, wager: Wager) {
+        // In rare cases, such as after a tip, a user's balance may have decreased in between
+        // the wager submit and the game start, in which we should fail to add them to the game.
+        console.log(wager.player);
+        const user = await manager.findOne(User, { where: { id: wager.player.id }});
+        if (user!.balance < 100*wager.wager) return this.UserPlayingStream.next({
+            user: user!, isPlaying: false
+        });
+
         this.GameStream.next({
             type: GameEvent.ADD_PLAYER,
             name: wager.player.name,
             wager: wager.wager
         });
 
-        const safetyCashout = wager.cashout;
-        const length = getRoundLength(safetyCashout);
+        const safetyCashout = await getIndividualSafety(wager.wager);
+        const effectiveCashout = Math.min(wager.cashout, safetyCashout);
+        const length = getRoundLength(effectiveCashout);
         const delta = DateTime.now().minus(this.currentStartDate).toMillis();
         this.cashoutPool.addTimeout(wager.player.id, () => {
-            this.pullWager(wager.player);
+            if (this.pullWager(wager.player, effectiveCashout)) {
+                if (effectiveCashout === safetyCashout) {
+                    this.CashoutAlertStream.next({ user: wager.player });
+                }
+            }
         }, length - delta);
 
         this.UserPlayingStream.next({
@@ -357,13 +391,14 @@ export class GameService {
     }
 
     private async pushHistoricalBet(manager: EntityManager, wager: Wager, profit: number) {
-        const player = await manager.findOneOrFail(User, wager.player.id, { select: ["balance"] });
+        const player = await manager.findOneOrFail(User, wager.player.id, { select: ["balance", "totalIn", "totalOut"] });
 
         const entry = new HistoricalBet();
         entry.user = wager.player;
         entry.game = this.currentExecutingGame;
         entry.busted = this.currentExecutingGame.bustedAt;
         entry.newBalance = player.balance; // This function is called after the increment has happened
+        entry.newNetBalance = player.balance - (player.totalIn - player.totalOut);
         entry.bet = wager.wager;
         if (profit > 0) {
             entry.cashout = wager.cashout;
@@ -374,11 +409,14 @@ export class GameService {
         manager.save(entry);
     }
 
-    private async fulfillWagers(bust: number): Promise<[number, number]> {
+    private countTotalWagered(): number {
+        return this.activeWagers.reduce((acc, v) => acc + v.wager, 0);
+    }
+
+    private async fulfillWagers(bust: number): Promise<number> {
         const wagers = this.activeWagers;
         this.activeWagers = [];
 
-        let totalWagered = 0;
         let totalProfit = 0;
 
         await getConnection().transaction(async manager => {
@@ -391,7 +429,6 @@ export class GameService {
                 // Push this game onto the user's betting history
                 await this.pushHistoricalBet(manager, wager, profit);
 
-                totalWagered += wager.wager;
                 totalProfit += profit;
             }
         });
@@ -405,6 +442,6 @@ export class GameService {
             }
         }
 
-        return [totalWagered, totalProfit];
+        return totalProfit;
     }
 }

@@ -18,6 +18,9 @@ export class HistoricalBet {
     newBalance: number;
 
     @Column("integer")
+    newNetBalance: number;
+
+    @Column("integer")
     bet: number;
 
     @Column("integer")

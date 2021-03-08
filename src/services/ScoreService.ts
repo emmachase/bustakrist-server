@@ -1,5 +1,7 @@
 import { createHmac } from "crypto";
+import { getConfig } from "../config";
 import { SECOND } from "../util/time";
+import { KristService } from "./KristService";
 
 export function calculateGameResult(seed: Buffer, salt: string): number {
   const nBits = 52; // number of most significant bits to use
@@ -40,4 +42,18 @@ export function getRoundLength(bust: number): number {
  */
 export function getScoreAt(time: number): number {
   return Math.floor(100 * 2**((time/1000)/10));
+}
+
+async function getSafety(wagered: number, maxPercent: number) {
+  const bankRoll = await KristService.instance.getUnallocatedBalance();
+  const max = bankRoll * maxPercent;
+  return Math.round((max + 100*wagered)/wagered);
+}
+
+export function getIndividualSafety(wagered: number): Promise<number> {
+  return getSafety(wagered, getConfig().game.safetySingle);
+}
+
+export function getRoundSafety(totalWagered: number): Promise<number> {
+  return getSafety(totalWagered, getConfig().game.safetyRound);
 }

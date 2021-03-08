@@ -22,7 +22,7 @@ export class ProfileHandlers extends SocketUser {
         const gamesPlayed = await manager.count(HistoricalBet, { where: { user } });
 
         const alltimeMinMax = await manager.createQueryBuilder(HistoricalBet, "bets")
-            .select(["MIN(newBalance) as minb", "MAX(newBalance) as maxb"])
+            .select(["MIN(newNetBalance) as minb", "MAX(newNetBalance) as maxb"])
             .where({ user }).execute();
 
         const totalWagered = (await manager.createQueryBuilder(HistoricalBet, "bets")
@@ -32,8 +32,8 @@ export class ProfileHandlers extends SocketUser {
             joined: +user.joined,
             balance: user.balance,
             netBase: user.totalIn - user.totalOut,
-            allTimeLow: alltimeMinMax[0].minb,
-            allTimeHigh: alltimeMinMax[0].maxb,
+            allTimeNetLow: alltimeMinMax[0].minb,
+            allTimeNetHigh: alltimeMinMax[0].maxb,
             gamesPlayed, totalWagered,
         })
     }

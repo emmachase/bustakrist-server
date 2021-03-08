@@ -1,6 +1,7 @@
 dependencies:
   '@types/ws': 7.4.0
   argon2: 0.27.1
+  axios: 0.21.1
   chalk: 4.1.0
   cli-progress: 3.9.0
   express: 4.17.1
@@ -443,6 +444,12 @@ packages:
     dev: false
     resolution:
       integrity: sha512-TR2mEZFVOj2pLStYxLht7TyfuRzaydfpxr3k9RpHIzMgw7A64dzsdqCxH1WJyQdoe8T10nDXd9wnEigmiuHIZw==
+  /axios/0.21.1:
+    dependencies:
+      follow-redirects: 1.13.3
+    dev: false
+    resolution:
+      integrity: sha512-dKQiRHxGD9PPRIUNIWvZhPTPpl1rf/OxTYKsqKUDjBwYylTvV7SjSHJb9ratfyzM6wCdLCOYLzs73qpg5c4iGA==
   /balanced-match/1.0.0:
     resolution:
       integrity: sha1-ibTRmasr7kneFk6gK4nORi1xt2c=
@@ -1072,6 +1079,17 @@ packages:
     dev: false
     resolution:
       integrity: sha512-GRnmB5gPyJpAhTQdSZTSp9uaPSvl09KoYcMQtsB9rQoOmzs9dH6ffeccH+Z+cv6P68Hu5bC6JjRh4Ah/mHSNRw==
+  /follow-redirects/1.13.3:
+    dev: false
+    engines:
+      node: '>=4.0'
+    peerDependencies:
+      debug: '*'
+    peerDependenciesMeta:
+      debug:
+        optional: true
+    resolution:
+      integrity: sha512-DUgl6+HDzB0iEptNQEXLx/KhTmDb8tZUHSeLqpnjpknR70H0nC2t9N73BK6fN4hOvJ84pKlIQVQ4k5FFlBedKA==
   /forwarded/0.1.2:
     dev: false
     engines:
@@ -2466,6 +2484,7 @@ specifiers:
   '@typescript-eslint/eslint-plugin': ^4.15.0
   '@typescript-eslint/parser': ^4.15.0
   argon2: ^0.27.1
+  axios: ^0.21.1
   chalk: ^4.1.0
   cli-progress: ^3.9.0
   eslint: ^7.20.0

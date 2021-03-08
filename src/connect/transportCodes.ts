@@ -10,6 +10,9 @@ export enum RequestCode {
     PULLOUT_WAGER = "PULLOUT_WAGER",
     PROFILE = "PROFILE",
     PROFILE_BETS = "PROFILE_BETS",
+    UPDATE_FRIEND = "UPDATE_FRIEND",
+    TIP = "TIP",
+    WITHDRAW = "WITHDRAW",
 }
 
 export enum UpdateCode {
@@ -23,7 +26,9 @@ export enum UpdateCode {
     ADD_ALL_PLAYERS = "ADD_ALL_PLAYERS",
     PLAYER_CASHEDOUT = "PLAYER_CASHEDOUT",
     UPDATE_BALANCE = "UPDATE_BALANCE",
+    RECIEVE_TIP = "RECIEVE_TIP",
     HISTORY = "HISTORY",
+    ALERT_SAFETY = "ALERT_SAFETY",
 }
 
 export enum ErrorCode {
@@ -33,6 +38,7 @@ export enum ErrorCode {
     INVALID_DATA = "INVALID_DATA",
     UNAUTHORIZED = "UNAUTHORIZED",
     UNFULFILLABLE = "UNFULFILLABLE",
+    INTERNAL_ERROR = "INTERNAL_ERROR",
 }
 
 export enum ErrorDetail {
@@ -46,4 +52,5 @@ export enum ErrorDetail {
     NOT_PLAYING = "NOT_PLAYING",
     ALREADY_PLAYING = "ALREADY_PLAYING",
     NOT_EXISTS = "NOT_EXISTS",
+    NOOP = "NOOP",
 }
