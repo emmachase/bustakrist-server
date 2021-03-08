@@ -6,6 +6,7 @@ export interface AppConfig {
         name: string
         listenPort: number
         logLevel?: string
+        chainFile: string
     }
 
     krist: {

@@ -2,6 +2,7 @@
 name = "BustAKrist"
 listenPort = 8081
 logLevel = "silly"
+chainFile = "devchain.txt"
 
 [krist]
 node = "krist.ceriat.net"

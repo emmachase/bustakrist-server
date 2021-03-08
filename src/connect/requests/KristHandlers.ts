@@ -44,6 +44,7 @@ export class KristHandlers extends SocketUser {
         try {
             await KristService.instance.makeWithdrawal(this.authedUser.name, data.to!, Math.floor(data.amount!));
             await getConnection().manager.decrement(User, { id: this.authedUser!.id }, "balance", amount);        
+            await getConnection().manager.decrement(User, { id: this.authedUser!.id }, "totalOut", amount);
 
             await this.refresh();
             return req.replySuccess({

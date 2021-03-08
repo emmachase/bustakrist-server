@@ -17,10 +17,10 @@ export class User {
     @Column({nullable: true})
     loginToken?: string;
 
-    @Column({type: "integer", default: 100000})
+    @Column({type: "integer", default: 0})
     balance: number; // Balance is fixed precision number, 123 means 1.23
 
-    @Column({type: "integer", default: 100000})
+    @Column({type: "integer", default: 0})
     totalIn: number; // Total Krist into this account, including tips
 
     @Column({type: "integer", default: 0})

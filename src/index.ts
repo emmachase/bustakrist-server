@@ -21,8 +21,11 @@ logger.debug("App initializing...");
 
 createConnection().then(async connection => {
 
-    // await initializeChain("devchain.txt", connection);
-    // console.log(await connection.manager.count(GameHash));
+    const hashCount = await connection.manager.count(GameHash);
+    if (hashCount === 0) {
+        await initializeChain(getConfig().system.chainFile, connection);
+    }
+    // console.log();
 
     // await calcStats();
 

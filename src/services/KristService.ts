@@ -188,6 +188,7 @@ export class KristService {
         }
 
         await getConnection().manager.increment(User, { id: user.id }, "balance", 100*trans.value);
+        await getConnection().manager.increment(User, { id: user.id }, "totalIn", 100*trans.value);
         BalStream.next({ user: user.name })
     }
 
