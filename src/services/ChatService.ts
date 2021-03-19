@@ -22,7 +22,7 @@ export class ChatService extends Subject<ChatEvent> {
     private get maxHistoryLength() {
         return getConfig().chat.history;
     }
-    
+
     public globalHistory: ChatEvent[] = [];
 
     private constructor() {
@@ -34,8 +34,8 @@ export class ChatService extends Subject<ChatEvent> {
 
         const privateMsg = !!msg.to;
         const event = {
-            from: msg.from, 
-            message: msg.message, 
+            from: msg.from,
+            message: msg.message,
             to: msg.to,
             timestamp: +new Date(),
             private: privateMsg || undefined
@@ -52,8 +52,8 @@ export class ChatService extends Subject<ChatEvent> {
     }
 
     private async checkCommand(event: {
-        from: string 
-        message: string 
+        from: string
+        message: string
         timestamp: number
         to?: string
         private?: boolean
@@ -120,6 +120,43 @@ export class ChatService extends Subject<ChatEvent> {
                     this.next({
                         from: "<SYSTEM>",
                         message: `There is no user named ${username} online`,
+                        timestamp: +new Date(),
+                    });
+                }
+            }
+        } else if (event.message.startsWith("!rawgive")) {
+            if (event.from !== "emma") {
+                return this.next({
+                    from: "<SYSTEM>",
+                    message: `You are not authorized to run this command.`,
+                    timestamp: +new Date(),
+                });
+            }
+
+            const parts = event.message.split(/\s+/);
+            parts.shift(); // remove cmd header
+
+            // const target = event.message.match(/^!banip (\w+)/);
+            if (parts && parts[0] && parts[1]) {
+                const username = parts[0];
+                const user = await getConnection().manager.findOne(User, {
+                    where: { name: username },
+                    select: ["id", "balance"]
+                });
+
+                if (user) {
+                    const amount = Math.floor(+parts[1]) || 0;
+                    await getConnection().manager.increment(User, { id: user.id }, "balance", amount);
+
+                    this.next({
+                        from: "<SYSTEM>",
+                        message: `${username}'s balance was raw modified by ${amount}.`,
+                        timestamp: +new Date(),
+                    });
+                } else {
+                    this.next({
+                        from: "<SYSTEM>",
+                        message: `There is no user named ${username}.`,
                         timestamp: +new Date(),
                     });
                 }
