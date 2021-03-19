@@ -14,6 +14,11 @@ export class AsyncPool {
             }
         };
 
+        const lastPart = this.handlers.get(key);
+        if (lastPart) {
+            clearTimeout(lastPart.timeout);
+        }
+
         this.handlers.set(key, {
             timeout: setTimeout(func, timeout),
             fired: false, func

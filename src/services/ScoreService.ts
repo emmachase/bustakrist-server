@@ -44,16 +44,16 @@ export function getScoreAt(time: number): number {
   return Math.floor(100 * 2**((time/1000)/10));
 }
 
-async function getSafety(wagered: number, maxPercent: number) {
-  const bankRoll = await KristService.instance.getUnallocatedBalance();
+async function getSafety(wagered: number, profited: number, maxPercent: number) {
+  const bankRoll = await KristService.instance.getUnallocatedBalance() - profited;
   const max = bankRoll * maxPercent;
   return Math.round((max + 100*wagered)/wagered);
 }
 
 export function getIndividualSafety(wagered: number): Promise<number> {
-  return getSafety(wagered, getConfig().game.safetySingle);
+  return getSafety(wagered, 0, getConfig().game.safetySingle);
 }
 
-export function getRoundSafety(totalWagered: number): Promise<number> {
-  return getSafety(totalWagered, getConfig().game.safetyRound);
+export function getRoundSafety(totalWagered: number, totalProfited: number = 0): Promise<number> {
+  return getSafety(totalWagered, totalProfited, getConfig().game.safetyRound);
 }

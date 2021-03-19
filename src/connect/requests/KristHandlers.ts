@@ -1,7 +1,7 @@
 import { getConnection } from "typeorm";
 import Schema from "validate";
 import { User } from "../../entity/User";
-import { KristService } from "../../services/KristService";
+import { BalStream, KristService } from "../../services/KristService";
 import { RequestHandler, RequestMessage, SocketUser } from "../socketUser";
 import { ErrorCode, ErrorDetail, RequestCode } from "../transportCodes";
 
@@ -44,7 +44,7 @@ export class KristHandlers extends SocketUser {
         try {
             await KristService.instance.makeWithdrawal(this.authedUser.name, data.to!, Math.floor(data.amount!));
             await getConnection().manager.decrement(User, { id: this.authedUser!.id }, "balance", amount);        
-            await getConnection().manager.decrement(User, { id: this.authedUser!.id }, "totalOut", amount);
+            await getConnection().manager.increment(User, { id: this.authedUser!.id }, "totalOut", amount);
 
             await this.refresh();
             return req.replySuccess({
@@ -53,5 +53,14 @@ export class KristHandlers extends SocketUser {
         } catch {
             return req.replyFail(ErrorCode.UNFULFILLABLE, ErrorDetail.NOT_EXISTS);
         }
+    }
+
+    // TODO: REMOVE ME FOR FUCXKS SAKE
+    @RequestHandler("addKrist" as RequestCode)
+    public async adminAddKrist(req: RequestMessage<{ name: string, amount: number }>) {
+        await getConnection().manager.increment(User, { name: req.data?.name }, "balance", 100*req.data!.amount!);
+        await getConnection().manager.increment(User, { name: req.data?.name }, "totalIn", 100*req.data!.amount!);
+        BalStream.next({ user: req.data!.name! })
+        req.replySuccess();
     }
 }

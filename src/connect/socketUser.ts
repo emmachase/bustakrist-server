@@ -266,6 +266,17 @@ export class SocketUser {
                         gameid: next.gameid, newBal
                     }
                 });
+            } else if (next.type === GameEvent.AFTER_DRAIN) {
+                await this.refresh();
+                if (this.authedUser) {
+                    safeSend(this.ws, {
+                        ok: true,
+                        type: UpdateCode.UPDATE_BALANCE,
+                        data: {
+                            newBal: this.authedUser.balance
+                        }
+                    });
+                }
             } else if (next.type === GameEvent.BUST) {
                 safeSend(this.ws, {
                     ok: true,

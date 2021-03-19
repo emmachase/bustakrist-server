@@ -8,6 +8,9 @@ export class HistoricalBet {
     @PrimaryGeneratedColumn()
     id: number;
 
+    @Column("integer")
+    seq: number; // Sequence number in user's history
+
     @ManyToOne(_type => User, u => u.history)
     user: User;
 

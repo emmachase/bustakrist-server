@@ -80,6 +80,7 @@ export class ProfileHandlers extends SocketUser {
         return req.replySuccess({
             entities: entities.map(e => ({
                 ...e,
+                id: e.seq,
                 game: e.game.id,
                 timestamp: +e.timestamp,
             })), more: rest > 0
