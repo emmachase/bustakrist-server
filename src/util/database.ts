@@ -66,11 +66,23 @@ export async function initializeChain(name: string, connection: Connection) {
 }
 
 export async function calcStats() {
-    const hashes = await getConnection().manager.find(GameHash);
+    const hashes = await getConnection().manager.find(GameHash, { take: 50000 });
     console.log(hashes.length);
     const bufs = hashes.map(h => Buffer.from(h.hash, "hex"));
     const busts = bufs.map(b => calculateGameResult(b, "00000000000000000004bac129769598d1fad2b42859e625729661a32b9c3e71"))
-    const good = busts.filter(b => b >= 200);
+    const good = busts.map(b => b >= 200);
+
+    let run = 0;
+    for (let i = 2200; i < good.length; i++) {
+        if (!good[i]) run += 1;
+        else run = 0;
+
+        if (run == 10) {
+            console.log("Run of 10 ending at ", i);
+            break;
+        }
+    }
+    
     console.log(good.length);
 }
 
