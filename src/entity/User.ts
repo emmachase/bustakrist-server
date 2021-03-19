@@ -36,4 +36,7 @@ export class User {
     @Column({type: "datetime", default: () => "DATETIME('now')"})
     joined: Date;
 
+    @Column({default: false})
+    banned: boolean;
+
 }

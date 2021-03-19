@@ -25,7 +25,7 @@ export class KristHandlers extends SocketUser {
     }>) {
         const errors = KristHandlers.WithdrawSchema.validate(req.data ?? {});
         if (errors.length) return req.replyFail(ErrorCode.MALFORMED, errors.map(e => e.message).join(" "));
-        
+
         if (!this.authedUser) {
             return req.replyFail(ErrorCode.UNAUTHORIZED, ErrorDetail.NOT_LOGGED_IN);
         }
@@ -42,9 +42,12 @@ export class KristHandlers extends SocketUser {
 
 
         try {
-            await KristService.instance.makeWithdrawal(this.authedUser.name, data.to!, Math.floor(data.amount!));
-            await getConnection().manager.decrement(User, { id: this.authedUser!.id }, "balance", amount);        
-            await getConnection().manager.increment(User, { id: this.authedUser!.id }, "totalOut", amount);
+            const name = this.authedUser.name;
+            await getConnection().manager.transaction(async manager => {
+                await manager.decrement(User, { id: this.authedUser!.id }, "balance", amount);
+                await manager.increment(User, { id: this.authedUser!.id }, "totalOut", amount);
+                await KristService.instance.makeWithdrawal(name, data.to!, Math.floor(data.amount!));
+            })
 
             await this.refresh();
             return req.replySuccess({

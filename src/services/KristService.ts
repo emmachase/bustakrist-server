@@ -187,8 +187,10 @@ export class KristService {
             return void await this.makeRefund(trans, "The user '" + trans.sent_metaname + "' does not exist");
         }
 
-        await getConnection().manager.increment(User, { id: user.id }, "balance", 100*trans.value);
-        await getConnection().manager.increment(User, { id: user.id }, "totalIn", 100*trans.value);
+        await getConnection().manager.transaction(async manager => {
+            await manager.increment(User, { id: user.id }, "balance", 100*trans.value);
+            await manager.increment(User, { id: user.id }, "totalIn", 100*trans.value);
+        })
         BalStream.next({ user: user.name })
     }
 

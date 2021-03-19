@@ -2,6 +2,8 @@ import chalk from "chalk";
 import { Subject } from "rxjs";
 import { getConnection } from "typeorm";
 import { getConfig } from "../config";
+import { getAllConnections } from "../connect/socketmanager";
+import { Ban } from "../entity/Ban";
 import { User } from "../entity/User";
 import { logger } from "../logger";
 
@@ -75,6 +77,49 @@ export class ChatService extends Subject<ChatEvent> {
                     this.next({
                         from: "<SYSTEM>",
                         message: `There is no user named ${username}`,
+                        timestamp: +new Date(),
+                    });
+                }
+            }
+        } else if (event.message.startsWith("!banip")) {
+            if (event.from !== "emma") {
+                return this.next({
+                    from: "<SYSTEM>",
+                    message: `You are not authorized to run this command.`,
+                    timestamp: +new Date(),
+                });
+            }
+
+            const target = event.message.match(/^!banip (\w+)/);
+            if (target && target[1]) {
+                const username = target[1];
+                let ips = new Set<string>();
+                for (const sock of getAllConnections()) {
+                    const user = sock.getAuthedUser();
+                    if (user?.name === username) {
+                        ips.add(sock.getOriginalRequest().ip);
+
+                        sock.ban();
+                    }
+                }
+
+                if (ips.size) {
+                    for (const ip of ips) {
+                        const ban = new Ban();
+                        ban.ip = ip;
+
+                        await getConnection().manager.save(ban);
+                    }
+
+                    this.next({
+                        from: "<SYSTEM>",
+                        message: `${username} has been banned.`,
+                        timestamp: +new Date(),
+                    });
+                } else {
+                    this.next({
+                        from: "<SYSTEM>",
+                        message: `There is no user named ${username} online`,
                         timestamp: +new Date(),
                     });
                 }

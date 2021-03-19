@@ -52,9 +52,15 @@ export class RequestMessage<D = unknown> {
 export class SocketUser {
     protected ws: WebSocket;
     protected origReq: Request;
+    public getOriginalRequest() {
+        return this.origReq;
+    }
 
     // When the user logs in, their User will be hydrated
     protected authedUser?: User;
+    public getAuthedUser(): User | undefined {
+        return this.authedUser;
+    }
 
     protected get ip() {
         return this.origReq.ip;
@@ -76,6 +82,17 @@ export class SocketUser {
         this.registerObservers();
 
         logger.info(chalk`WS Connection established from {yellow ${req.ip}}`)
+    }
+
+    public ban() {
+        safeSend(this.ws, {
+            ok: false,
+            type: UpdateCode.HELLO,
+            errorType: ErrorCode.BANNED,
+            error: "Your IP has been banned"
+        });
+
+        this.die();
     }
 
     private presendHistory() {

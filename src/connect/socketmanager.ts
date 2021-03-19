@@ -22,6 +22,10 @@ export function isAnyoneHere(): boolean {
     return !!connections.length;
 }
 
+export function getAllConnections() {
+    return connections;
+}
+
 export function setupSocket(ws: WebSocket, req: Request) {
     connections.push(new SocketUser(ws, req));
     ConnectionStream.next();

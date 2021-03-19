@@ -38,7 +38,13 @@ export class AuthHandlers extends SocketUser {
 
         const data = req.data!;
 
+        const existingUser = await getConnection().manager.createQueryBuilder(User, "user")
+            .where("LOWER(user.name) = LOWER(:name)", { name: data.name })
+            .getOne();
+
         try {
+            if (existingUser) throw new Error();
+
             const newUser = new User();
             newUser.name = data.name!;
             newUser.passwordHash = await argon2.hash(data.pass!);
