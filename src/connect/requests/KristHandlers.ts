@@ -54,13 +54,4 @@ export class KristHandlers extends SocketUser {
             return req.replyFail(ErrorCode.UNFULFILLABLE, ErrorDetail.NOT_EXISTS);
         }
     }
-
-    // TODO: REMOVE ME FOR FUCXKS SAKE
-    @RequestHandler("addKrist" as RequestCode)
-    public async adminAddKrist(req: RequestMessage<{ name: string, amount: number }>) {
-        await getConnection().manager.increment(User, { name: req.data?.name }, "balance", 100*req.data!.amount!);
-        await getConnection().manager.increment(User, { name: req.data?.name }, "totalIn", 100*req.data!.amount!);
-        BalStream.next({ user: req.data!.name! })
-        req.replySuccess();
-    }
 }
