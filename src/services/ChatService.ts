@@ -141,13 +141,13 @@ export class ChatService extends Subject<ChatEvent> {
                 const username = parts[0];
                 const user = await getConnection().manager.findOne(User, {
                     where: { name: username },
-                    select: ["id", "balance"]
+                    select: ["id", "name", "balance"]
                 });
 
                 if (user) {
                     const amount = Math.floor(+parts[1]) || 0;
                     await getConnection().manager.increment(User, { id: user.id }, "balance", amount);
-                    BalStream.next({ user: user.name })
+                    BalStream.next({ user: user.name });
 
                     this.next({
                         from: "<SYSTEM>",
@@ -178,7 +178,7 @@ export class ChatService extends Subject<ChatEvent> {
                 const username = parts[0];
                 const user = await getConnection().manager.findOne(User, {
                     where: { name: username },
-                    select: ["id", "balance"]
+                    select: ["id", "name", "balance"]
                 });
 
                 if (user) {
@@ -187,11 +187,11 @@ export class ChatService extends Subject<ChatEvent> {
                         await manager.increment(User, { id: user.id }, "balance", amount);
                         await manager.increment(User, { id: user.id }, "totalIn", amount);
                     })
-                    BalStream.next({ user: user.name })
+                    BalStream.next({ user: user.name });
                     
                     this.next({
                         from: "<SYSTEM>",
-                        message: `${username}'s balance was raw modified by ${amount}.`,
+                        message: `Gave ${username} ${amount}KST.`,
                         timestamp: +new Date(),
                     });
                 } else {
