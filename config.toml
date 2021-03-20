@@ -1,14 +1,14 @@
 [system]
 name = "BustAKrist"
-listenPort = 8081
-logLevel = "silly"
-chainFile = "devchain.txt"
+listenPort = 8457
+logLevel = "info"
+chainFile = "chain.txt"
 
 [krist]
 node = "krist.ceriat.net"
 connectionBounce = 30
 
-pkey = "df08db7a93fc4b53c3fbbe52c80daa0bce7fcc4c2f5017a0fd5bc568eb60fbf8-000"
+pkey = "***REMOVED***"
 address = "kitsemmaya"
 names = ["bust", "bustakrist", "bak"]
 
