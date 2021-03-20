@@ -1,5 +1,8 @@
+import chalk from "chalk";
 import winston from "winston";
 import { getConfig } from "./config";
+
+chalk.level = 2;
 
 const logger_i = winston.createLogger({
   level: getConfig().system.logLevel ?? "info",
