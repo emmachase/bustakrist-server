@@ -191,7 +191,7 @@ export class ChatService extends Subject<ChatEvent> {
                     
                     this.next({
                         from: "<SYSTEM>",
-                        message: `Gave ${username} ${amount/100}KST.`,
+                        message: `Gave ${username} ${(amount/100).toFixed(2)}KST.`,
                         timestamp: +new Date(),
                     });
                 } else {
