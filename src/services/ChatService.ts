@@ -105,7 +105,10 @@ export class ChatService extends Subject<ChatEvent> {
 
             this.next({
                 from: "<SYSTEM>",
-                message: `The current bankroll is ${bankroll.toFixed(2)}KST`,
+                message: `The current bankroll is ${(bankroll/100).toLocaleString("en-US", {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                })}KST`,
                 timestamp: +new Date(),
             });
         } else if (event.message.startsWith("!banip")) {
