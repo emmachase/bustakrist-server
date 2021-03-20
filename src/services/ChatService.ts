@@ -8,6 +8,7 @@ import { Ban } from "../entity/Ban";
 import { User } from "../entity/User";
 import { logger } from "../logger";
 import { BalStream } from "./KristService";
+import { GameService } from "./GameService";
 
 interface ChatEvent {
     from: string // Username
@@ -217,6 +218,44 @@ export class ChatService extends Subject<ChatEvent> {
                         timestamp: +new Date(),
                     });
                 }
+            }
+        } else if (event.message.startsWith("!pause")) {
+            if (event.from !== "emma") {
+                return this.next({
+                    from: "<SYSTEM>",
+                    message: `You are not authorized to run this command.`,
+                    timestamp: +new Date(),
+                });
+            }
+
+            GameService.instance.requestPause();
+
+            this.next({
+                from: "<SYSTEM>",
+                message: `A pause has been requested.`,
+                timestamp: +new Date(),
+            });
+        } else if (event.message.startsWith("!unpause")) {
+            if (event.from !== "emma") {
+                return this.next({
+                    from: "<SYSTEM>",
+                    message: `You are not authorized to run this command.`,
+                    timestamp: +new Date(),
+                });
+            }
+
+            if (GameService.instance.unpause()) {
+                this.next({
+                    from: "<SYSTEM>",
+                    message: `The game has been resumed.`,
+                    timestamp: +new Date(),
+                });
+            } else {
+                this.next({
+                    from: "<SYSTEM>",
+                    message: `The game is not paused.`,
+                    timestamp: +new Date(),
+                });
             }
         }
     }

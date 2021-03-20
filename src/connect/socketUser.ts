@@ -100,6 +100,16 @@ export class SocketUser {
         if (GameService.instance.gameIsRunning) {
             const state = GameService.instance.getState();
 
+            if (GameService.instance.gamePaused) {
+                safeSend(this.ws, {
+                    ok: true,
+                    type: UpdateCode.PAUSED,
+                    data: {
+                        value: true
+                    }
+                });
+            }
+
             safeSend(this.ws, {
                 ok: true,
                 type: UpdateCode.GAME_STARTING,
@@ -321,6 +331,14 @@ export class SocketUser {
                     data: {
                         name: next.name,
                         cashout: next.cashout
+                    }
+                });
+            } else if (next.type === GameEvent.PAUSED) {
+                safeSend(this.ws, {
+                    ok: true,
+                    type: UpdateCode.PAUSED,
+                    data: {
+                        value: next.value
                     }
                 });
             }

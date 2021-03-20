@@ -7,6 +7,7 @@ dependencies:
   cli-progress: 3.9.0
   express: 4.17.1
   express-ws: 4.0.0_express@4.17.1
+  ioredis: 4.24.2
   luxon: 1.26.0
   moment: 2.29.1
   reflect-metadata: 0.1.13
@@ -23,6 +24,7 @@ devDependencies:
   '@types/cli-progress': 3.8.0
   '@types/express': 4.17.11
   '@types/express-ws': 3.0.0
+  '@types/ioredis': 4.22.0
   '@types/luxon': 1.26.0
   '@types/node': 14.14.28
   '@typescript-eslint/eslint-plugin': 4.15.0_bc16c4564afe16e3219e549b81836acd
@@ -158,6 +160,12 @@ packages:
     dev: true
     resolution:
       integrity: sha512-no+R6rW60JEc59977wIxreQVsIEOAYwgCqldrA/vkpCnbD7MqTefO97lmoBe4WE0F156bC4uLSP1XHDOySnChg==
+  /@types/ioredis/4.22.0:
+    dependencies:
+      '@types/node': 14.14.35
+    dev: true
+    resolution:
+      integrity: sha512-BhgyAqt+CIFj/ejdYpWSGYUQzoQr7sFOBYLL8yEExa1tSTi2cy2D3a952zF8Tm4Q1cY3srn8xXZfb2riX6hWjw==
   /@types/json-schema/7.0.7:
     dev: true
     resolution:
@@ -174,6 +182,10 @@ packages:
     dev: true
     resolution:
       integrity: sha512-lg55ArB+ZiHHbBBttLpzD07akz0QPrZgUODNakeC09i62dnrywr9mFErHuaPlB6I7z+sEbK+IYmplahvplCj2g==
+  /@types/node/14.14.35:
+    dev: true
+    resolution:
+      integrity: sha512-Lt+wj8NVPx0zUmUwumiVXapmaLUcAk3yPuHCFVXras9k5VT9TdhJqKqGVUQCD60OTMCl0qxJ57OiTL0Mic3Iag==
   /@types/node/8.10.66:
     resolution:
       integrity: sha512-tktOkFUA4kXx2hhhrB8bIFb5TbwzS4uOhKEmwiD+NoiL0qtP2OQ9mFldbgD4dV1djrlBYP6eBuQZiWjuHUpqFw==
@@ -591,6 +603,12 @@ packages:
     dev: false
     resolution:
       integrity: sha512-OcRE68cOsVMXp1Yvonl/fzkQOyjLSu/8bhPDfQt0e0/Eb283TKP20Fs2MqoPsr9SwA595rRCA+QMzYc9nBP+JQ==
+  /cluster-key-slot/1.1.0:
+    dev: false
+    engines:
+      node: '>=0.10.0'
+    resolution:
+      integrity: sha512-2Nii8p3RwAPiFwsnZvukotvow2rIHM+yQ6ZcBXGHdniadkYGZYiGmkHJIbZPIV9nfv7m/U1IPMVVcAhoWFeklw==
   /code-point-at/1.1.0:
     dev: false
     engines:
@@ -733,6 +751,12 @@ packages:
     dev: false
     resolution:
       integrity: sha1-hMbhWbgZBP3KWaDvRM2HDTElD5o=
+  /denque/1.5.0:
+    dev: false
+    engines:
+      node: '>=0.10'
+    resolution:
+      integrity: sha512-CYiCSgIF1p6EUByQPlGkKnP1M9g0ZV3qMIrqMqZqdwazygIA/YP2vrbcyl1h/WppKJTdl1F85cXIle+394iDAQ==
   /depd/1.1.2:
     dev: false
     engines:
@@ -1300,6 +1324,23 @@ packages:
     dev: false
     resolution:
       integrity: sha512-JV/yugV2uzW5iMRSiZAyDtQd+nxtUnjeLt0acNdw98kKLrvuRVyB80tsREOE7yvGVgalhZ6RNXCmEHkUKBKxew==
+  /ioredis/4.24.2:
+    dependencies:
+      cluster-key-slot: 1.1.0
+      debug: 4.3.1
+      denque: 1.5.0
+      lodash.defaults: 4.2.0
+      lodash.flatten: 4.4.0
+      p-map: 2.1.0
+      redis-commands: 1.7.0
+      redis-errors: 1.2.0
+      redis-parser: 3.0.0
+      standard-as-callback: 2.1.0
+    dev: false
+    engines:
+      node: '>=6'
+    resolution:
+      integrity: sha512-SSuVXwoG747sZetxxs9gyAno5kfUfvo4s5mSZp4dh8vzuTnrtA5mTf2OjL6sPfIfNbVTROg2c+VbXceGlpucPQ==
   /ipaddr.js/1.9.1:
     dev: false
     engines:
@@ -1393,6 +1434,14 @@ packages:
       node: '>= 0.8.0'
     resolution:
       integrity: sha512-+bT2uH4E5LGE7h/n3evcS/sQlJXCpIp6ym8OWJ5eV6+67Dsql/LaaT7qJBAt2rzfoa/5QBGBhxDix1dMt2kQKQ==
+  /lodash.defaults/4.2.0:
+    dev: false
+    resolution:
+      integrity: sha1-0JF4cW/+pN3p5ft7N/bwgCJ0WAw=
+  /lodash.flatten/4.4.0:
+    dev: false
+    resolution:
+      integrity: sha1-8xwiIlqWMtK7+OSt2+8kCqdlph8=
   /lodash/4.17.20:
     dev: true
     resolution:
@@ -1704,6 +1753,12 @@ packages:
     dev: false
     resolution:
       integrity: sha512-0CWcCECdMVc2Rw3U5w9ZjqX6ga6ubk1xDVKxtBQPK7wis/0F2r9T6k4ydGYhecl7YUBxBVxhL5oisPsNxAPe2g==
+  /p-map/2.1.0:
+    dev: false
+    engines:
+      node: '>=6'
+    resolution:
+      integrity: sha512-y3b8Kpd8OAN444hxfBbFfj1FY/RjtTd8tzYwhUqNYXx0fXx2iX4maP4Qr6qhIKbQXI02wTLAda4fYUbDagTUFw==
   /parent-module/1.0.1:
     dependencies:
       callsites: 3.1.0
@@ -1855,6 +1910,24 @@ packages:
       node: '>= 6'
     resolution:
       integrity: sha512-BViHy7LKeTz4oNnkcLJ+lVSL6vpiFeX6/d3oSH8zCW7UxP2onchk+vTGB143xuFjHS3deTgkKoXXymXqymiIdA==
+  /redis-commands/1.7.0:
+    dev: false
+    resolution:
+      integrity: sha512-nJWqw3bTFy21hX/CPKHth6sfhZbdiHP6bTawSgQBlKOVRG7EZkfHbbHwQJnrE4vsQf0CMNE+3gJ4Fmm16vdVlQ==
+  /redis-errors/1.2.0:
+    dev: false
+    engines:
+      node: '>=4'
+    resolution:
+      integrity: sha1-62LSrbFeTq9GEMBK/hUpOEJQq60=
+  /redis-parser/3.0.0:
+    dependencies:
+      redis-errors: 1.2.0
+    dev: false
+    engines:
+      node: '>=4'
+    resolution:
+      integrity: sha1-tm2CjNyv5rS4pCin3vTGvKwxyLQ=
   /reflect-metadata/0.1.13:
     dev: false
     resolution:
@@ -2063,6 +2136,10 @@ packages:
     dev: false
     resolution:
       integrity: sha1-VHxws0fo0ytOEI6hoqFZ5f3eGcA=
+  /standard-as-callback/2.1.0:
+    dev: false
+    resolution:
+      integrity: sha512-qoRRSyROncaz1z0mvYqIE4lCd9p2R90i6GxW3uZv5ucSu8tU7B5HXUP1gG8pVZsYNVaXjk8ClXHPttLyxAL48A==
   /statuses/1.5.0:
     dev: false
     engines:
@@ -2504,6 +2581,7 @@ specifiers:
   '@types/cli-progress': ^3.8.0
   '@types/express': ^4.17.11
   '@types/express-ws': ^3.0.0
+  '@types/ioredis': ^4.22.0
   '@types/luxon': ^1.26.0
   '@types/node': ^14.14.28
   '@types/ws': ^7.4.0
@@ -2517,6 +2595,7 @@ specifiers:
   eslint: ^7.20.0
   express: ^4.17.1
   express-ws: ^4.0.0
+  ioredis: ^4.24.2
   luxon: ^1.26.0
   moment: ^2.29.1
   reflect-metadata: ^0.1.10

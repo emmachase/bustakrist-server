@@ -14,13 +14,15 @@ import { DateTime, Duration } from "luxon";
 import { HistoricalBet } from "../entity/HistoricalBet";
 import { AsyncPool } from "../util/AsyncPool";
 import { Mutex } from "async-mutex";
+import { redis } from "../connect/redis";
 
 export enum GameEvent {
     ANNOUNCE_START,
     BUST,
     ADD_PLAYER,
     PLAYER_CASHEDOUT,
-    AFTER_DRAIN
+    AFTER_DRAIN,
+    PAUSED
 }
 
 export type Wager = {
@@ -60,6 +62,9 @@ export class GameService {
         cashout: number // FP100
     } | {
         type: GameEvent.AFTER_DRAIN
+    } | {
+        type: GameEvent.PAUSED
+        value: boolean
     }> = new Subject();
 
     public UserPlayingStream: Subject<{
@@ -82,6 +87,29 @@ export class GameService {
 
     private cashoutPool = new AsyncPool();
 
+    public gamePaused = false;
+    public requestPause() {
+        this.gamePaused = true;
+        redis.set("bk_paused", "true");
+    }
+
+    public unpause(): boolean {
+        if (this.gamePaused) {
+            this.gamePaused = false;
+            redis.set("bk_paused", "false");
+
+            this.GameStream.next({
+                type: GameEvent.PAUSED,
+                value: false,
+            });
+
+            this.nextGame();
+            return true;
+        }
+
+        return false;
+    }
+
     // Wagers yet to be locked in for the next round
     private pendingWagers: Wager[] = [];
     private pendingWagersMutex = new Mutex();
@@ -90,16 +118,30 @@ export class GameService {
     private activeWagers: Wager[] = [];
     private activeWagersMutex = new Mutex();
 
-    private connectionSubscription = ConnectionStream.subscribe(this.tryBootstrapService.bind(this));
-    private constructor() {
-        fetchNextGameID().then(gid => {
-            this.nextGameID = gid;
+    private connectionSubscription = ConnectionStream.subscribe(() => {
+        if (this.hasInitialized) {
             this.tryBootstrapService();
-        });
+        }
+    });
+    private constructor() {
+        this.restoreConfiguration().then(() => {
+            fetchNextGameID().then(gid => {
+                this.nextGameID = gid;
+                this.hasInitialized = true;
 
-        fetchHistory().then(history => {
-            this.previousGames = this.previousGames.concat(history);
+                this.tryBootstrapService();
+            });
+
+            fetchHistory().then(history => {
+                this.previousGames = this.previousGames.concat(history);
+            })
         })
+    }
+
+    private hasInitialized = false;
+    private async restoreConfiguration() {
+        const paused = await redis.get("bk_paused");
+        this.gamePaused = paused === "true";
     }
 
     public tryBootstrapService() {
@@ -257,6 +299,15 @@ export class GameService {
     }
 
     public async nextGame() {
+        if (this.gamePaused) {
+            this.GameStream.next({
+                type: GameEvent.PAUSED,
+                value: true,
+            });
+
+            return;
+        }
+
         this.currentGameID = this.nextGameID++;
         logger.info(chalk.bold`Initiating game {cyan ${this.currentGameID}}`);
 
