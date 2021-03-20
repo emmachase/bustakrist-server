@@ -6,6 +6,7 @@ import { getAllConnections } from "../connect/socketmanager";
 import { Ban } from "../entity/Ban";
 import { User } from "../entity/User";
 import { logger } from "../logger";
+import { BalStream } from "./KristService";
 
 interface ChatEvent {
     from: string // Username
@@ -136,7 +137,6 @@ export class ChatService extends Subject<ChatEvent> {
             const parts = event.message.split(/\s+/);
             parts.shift(); // remove cmd header
 
-            // const target = event.message.match(/^!banip (\w+)/);
             if (parts && parts[0] && parts[1]) {
                 const username = parts[0];
                 const user = await getConnection().manager.findOne(User, {
@@ -147,7 +147,48 @@ export class ChatService extends Subject<ChatEvent> {
                 if (user) {
                     const amount = Math.floor(+parts[1]) || 0;
                     await getConnection().manager.increment(User, { id: user.id }, "balance", amount);
+                    BalStream.next({ user: user.name })
 
+                    this.next({
+                        from: "<SYSTEM>",
+                        message: `${username}'s balance was raw modified by ${amount}.`,
+                        timestamp: +new Date(),
+                    });
+                } else {
+                    this.next({
+                        from: "<SYSTEM>",
+                        message: `There is no user named ${username}.`,
+                        timestamp: +new Date(),
+                    });
+                }
+            }
+        } else if (event.message.startsWith("!give")) {
+            if (event.from !== "emma") {
+                return this.next({
+                    from: "<SYSTEM>",
+                    message: `You are not authorized to run this command.`,
+                    timestamp: +new Date(),
+                });
+            }
+
+            const parts = event.message.split(/\s+/);
+            parts.shift(); // remove cmd header
+
+            if (parts && parts[0] && parts[1]) {
+                const username = parts[0];
+                const user = await getConnection().manager.findOne(User, {
+                    where: { name: username },
+                    select: ["id", "balance"]
+                });
+
+                if (user) {
+                    const amount = Math.floor(+parts[1]*100) || 0;
+                    await getConnection().manager.transaction(async manager => {
+                        await manager.increment(User, { id: user.id }, "balance", amount);
+                        await manager.increment(User, { id: user.id }, "totalIn", amount);
+                    })
+                    BalStream.next({ user: user.name })
+                    
                     this.next({
                         from: "<SYSTEM>",
                         message: `${username}'s balance was raw modified by ${amount}.`,
