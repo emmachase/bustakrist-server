@@ -129,7 +129,7 @@ export class ChatService extends Subject<ChatEvent> {
                     if (user?.name === username) {
                         ips.add(sock.getOriginalRequest().ip);
 
-                        sock.ban();
+                        sock.ban(true);
                     }
                 }
 
@@ -143,13 +143,53 @@ export class ChatService extends Subject<ChatEvent> {
 
                     this.next({
                         from: "<SYSTEM>",
-                        message: `${username} has been banned.`,
+                        message: `${username} has been ip-banned.`,
                         timestamp: +new Date(),
                     });
                 } else {
                     this.next({
                         from: "<SYSTEM>",
                         message: `There is no user named ${username} online`,
+                        timestamp: +new Date(),
+                    });
+                }
+            }
+        } else if (event.message.startsWith("!ban")) {
+            if (event.from !== "emma") {
+                return this.next({
+                    from: "<SYSTEM>",
+                    message: `You are not authorized to run this command.`,
+                    timestamp: +new Date(),
+                });
+            }
+
+            const target = event.message.match(/^!banip (\w+)/);
+            if (target && target[1]) {
+                const username = target[1];
+                const user = await getConnection().manager.findOne(User, {
+                    where: { name: username },
+                });
+
+                for (const sock of getAllConnections()) {
+                    const user = sock.getAuthedUser();
+                    if (user?.name === username) {
+                        sock.ban(false);
+                    }
+                }
+
+                if (user) {
+                    user.banned = true;
+                    await getConnection().manager.save(user);
+
+                    this.next({
+                        from: "<SYSTEM>",
+                        message: `${username} has been banned.`,
+                        timestamp: +new Date(),
+                    });
+                } else {
+                    this.next({
+                        from: "<SYSTEM>",
+                        message: `There is no user named ${username}.`,
                         timestamp: +new Date(),
                     });
                 }

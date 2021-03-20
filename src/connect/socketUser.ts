@@ -84,12 +84,14 @@ export class SocketUser {
         logger.info(chalk`WS Connection established from {yellow ${req.ip}}`)
     }
 
-    public ban() {
+    public ban(ip: boolean) {
         safeSend(this.ws, {
             ok: false,
             type: UpdateCode.HELLO,
             errorType: ErrorCode.BANNED,
-            error: "Your IP has been banned"
+            error: ip 
+                ? "Your IP has been banned"
+                : "You have been banned"
         });
 
         this.die();

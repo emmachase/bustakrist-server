@@ -95,11 +95,17 @@ export class AuthHandlers extends SocketUser {
             return req.replyFail(ErrorCode.UNAUTHORIZED, ErrorDetail.INVALID_CREDENTIALS);
         }
 
-        logger.info(chalk`Login attempt from {yellow ${this.ip}} as {cyan ${data.name}} ({green.bold SUCCESS})`);
-        this.authedUser = (await getConnection().manager.findOne(User, {
+        const fullUser = await getConnection().manager.findOne(User, {
             where: { name: data.name },
             relations: [ "friends" ]
-        }))!;
+        });
+
+        if (!fullUser || fullUser.banned) {
+            return req.replyFail(ErrorCode.BANNED);
+        }
+
+        logger.info(chalk`Login attempt from {yellow ${this.ip}} as {cyan ${data.name}} ({green.bold SUCCESS})`);
+        this.authedUser = fullUser!;
 
         this.authedUser.loginToken = crypto64(64);
 
