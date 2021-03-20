@@ -8,7 +8,7 @@ chainFile = "devchain.txt"
 node = "krist.ceriat.net"
 connectionBounce = 30
 
-pkey = "60460870c906e8b01372063a3b03734de60d1a1a23fe1a6b467d99ff181c0bf9c"
+pkey = "df08db7a93fc4b53c3fbbe52c80daa0bce7fcc4c2f5017a0fd5bc568eb60fbf8-000"
 address = "kitsemmaya"
 names = ["bust", "bustakrist", "bak"]
 

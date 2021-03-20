@@ -304,7 +304,7 @@ export class SocketUser {
                     }
                 });
 
-                this.sendAuthedGameState();
+                await this.sendAuthedGameState();
             } else if (next.type === GameEvent.ADD_PLAYER) {
                 safeSend(this.ws, {
                     ok: true,
@@ -368,13 +368,13 @@ export class SocketUser {
         }
     }
 
-    public sendAuthedGameState() {
+    public async sendAuthedGameState() {
         if (this.authedUser) {
             safeSend(this.ws, {
                 ok: true,
                 type: UpdateCode.UPDATE_PLAYING,
                 data: {
-                    playing: GameService.instance.isPlaying(this.authedUser)
+                    playing: await GameService.instance.isPlaying(this.authedUser)
                 }
             })
         }

@@ -1,9 +1,11 @@
+import chalk from "chalk";
 import { getConnection } from "typeorm";
 import Schema from "validate";
 import { User } from "../../entity/User";
 import { logger } from "../../logger";
 import { ChatService } from "../../services/ChatService";
 import { TipStream } from "../../services/KristService";
+import { kst, kstF2 } from "../../util/chalkFormatters";
 import { safeSend } from "../socketmanager";
 import { RequestHandler, RequestMessage, SocketUser } from "../socketUser";
 import { RequestCode, ErrorCode, ErrorDetail, UpdateCode } from "../transportCodes";
@@ -134,6 +136,8 @@ export class SocialHandlers extends SocketUser {
             await manager.increment(User, { id: this.authedUser!.id }, "totalOut", data.amount!);
             await manager.increment(User, { id: targetUser.id }, "totalIn", data.amount!);
         });
+
+        logger.info(chalk`User {cyan ${this.authedUser.name}} tipped ${kstF2(data.amount!)} to {magenta ${targetUser.name}}`);
 
         await this.refresh();
         safeSend(this.ws, {

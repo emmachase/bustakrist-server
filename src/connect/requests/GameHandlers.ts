@@ -1,3 +1,4 @@
+import { Mutex } from "async-mutex";
 import Schema from "validate";
 import { GameService } from "../../services/GameService";
 import { SocketUser, RequestHandler, RequestMessage } from "../socketUser";
@@ -31,6 +32,8 @@ export class GameHandlers extends SocketUser {
         }
     })
 
+    private static WagerMutex = new Mutex();
+
     @RequestHandler(RequestCode.COMMIT_WAGER)
     public async commitWager(req: RequestMessage<{
         bet: number,
@@ -54,14 +57,18 @@ export class GameHandlers extends SocketUser {
             return req.replyFail(ErrorCode.UNFULFILLABLE, ErrorDetail.LOW_BALANCE);
         }
 
-        if (GameService.instance.canJoinGame(this.authedUser)) {
-            return req.replyFail(ErrorCode.UNFULFILLABLE, ErrorDetail.ALREADY_PLAYING);
-        }
+        await GameHandlers.WagerMutex.runExclusive(async () => {
+            if (!this.authedUser) return req.replyFail(ErrorCode.UNAUTHORIZED, ErrorDetail.NOT_LOGGED_IN);
 
-        await GameService.instance.putWager(this.authedUser, data.bet, data.cashout);
-        await this.refresh();
-        req.replySuccess({
-            newBal: this.authedUser.balance
+            if (await GameService.instance.canJoinGame(this.authedUser)) {
+                return req.replyFail(ErrorCode.UNFULFILLABLE, ErrorDetail.ALREADY_PLAYING);
+            }
+
+            await GameService.instance.putWager(this.authedUser, data.bet!, data.cashout!);
+            await this.refresh();
+            req.replySuccess({
+                newBal: this.authedUser.balance
+            });
         });
     }
 
@@ -71,11 +78,11 @@ export class GameHandlers extends SocketUser {
             return req.replyFail(ErrorCode.UNAUTHORIZED, ErrorDetail.NOT_LOGGED_IN);
         }
 
-        if (!GameService.instance.isPlaying(this.authedUser)) {
+        if (!await GameService.instance.isPlaying(this.authedUser)) {
             return req.replyFail(ErrorCode.UNFULFILLABLE, ErrorDetail.NOT_PLAYING);
         }
 
-        const success = GameService.instance.pullWager(this.authedUser);
+        const success = await GameService.instance.pullWager(this.authedUser);
         if (!success) {
             return req.replyFail(ErrorCode.UNFULFILLABLE, ErrorDetail.NOT_PLAYING);
         }

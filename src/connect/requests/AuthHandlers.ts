@@ -67,7 +67,7 @@ export class AuthHandlers extends SocketUser {
         getConnection().manager.save(this.authedUser);
         this.notifyJoin();
 
-        this.sendAuthedGameState();
+        await this.sendAuthedGameState();
 
         return req.replySuccess({
             user: this.authedUser.name,
@@ -107,7 +107,7 @@ export class AuthHandlers extends SocketUser {
         getConnection().manager.save(this.authedUser);
         this.notifyJoin();
 
-        this.sendAuthedGameState();
+        await this.sendAuthedGameState();
 
         return req.replySuccess({
             user: this.authedUser.name,
@@ -143,7 +143,7 @@ export class AuthHandlers extends SocketUser {
 
         this.notifyJoin();
 
-        this.sendAuthedGameState();
+        await this.sendAuthedGameState();
 
         return req.replySuccess({
             user: this.authedUser.name,

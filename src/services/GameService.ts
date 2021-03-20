@@ -13,6 +13,7 @@ import { calculateGameResult, getIndividualSafety, getRoundLength, getRoundSafet
 import { DateTime, Duration } from "luxon";
 import { HistoricalBet } from "../entity/HistoricalBet";
 import { AsyncPool } from "../util/AsyncPool";
+import { Mutex } from "async-mutex";
 
 export enum GameEvent {
     ANNOUNCE_START,
@@ -83,9 +84,11 @@ export class GameService {
 
     // Wagers yet to be locked in for the next round
     private pendingWagers: Wager[] = [];
+    private pendingWagersMutex = new Mutex();
 
     // Wagers locked in this round
     private activeWagers: Wager[] = [];
+    private activeWagersMutex = new Mutex();
 
     private connectionSubscription = ConnectionStream.subscribe(this.tryBootstrapService.bind(this));
     private constructor() {
@@ -125,28 +128,42 @@ export class GameService {
         }
     }
 
-    public isPlaying(user: User): boolean | "pending" | "active" {
-        const pending = !!this.pendingWagers.find(w => w.player.id === user.id);
-        if (pending) return "pending";
+    public async isPlaying(user: User): Promise<boolean | "pending" | "active"> {
+        let ret;
 
-        const active =  !!this.activeWagers.find(w => w.player.id === user.id);
-        if (active) return "active";
+        await this.pendingWagersMutex.runExclusive(() => {
+            const pending = !!this.pendingWagers.find(w => w.player.id === user.id);
+            if (pending) ret = "pending";
+        });
+
+        if (ret) return ret;
+
+        await this.activeWagersMutex.runExclusive(() => {
+            const active =  !!this.activeWagers.find(w => w.player.id === user.id);
+            if (active) ret = "active";
+        });
+
+        if (ret) return ret;
 
         return false;
-        /*
-        return      this.pendingWagers
-            .concat(this.activeWagers)
-            .find(w => w.player.id === user.id) !== undefined;
-        */
     }
 
-    public canJoinGame(user: User): boolean {
+    public async canJoinGame(user: User): Promise<boolean> {
         const timeDiff = DateTime.now().minus(this.currentStartDate).toMillis();
 
+        let ret: boolean = false;
         if (timeDiff < getConfig().game.roundPadding) {
-            return !!this.activeWagers.find(w => w.player.id === user.id);
+            await this.activeWagersMutex.runExclusive(() => 
+                ret = !!this.activeWagers.find(w => w.player.id === user.id)
+            );
+
+            return ret;
         } else {
-            return !!this.pendingWagers.find(w => w.player.id === user.id);
+            await this.pendingWagersMutex.runExclusive(() => 
+                ret = !!this.pendingWagers.find(w => w.player.id === user.id)
+            );
+
+            return ret;
         }
     }
 
@@ -158,68 +175,85 @@ export class GameService {
         };
 
         if (timeDiff < getConfig().game.roundPadding) {
-            // Let them in to the active game
-            await this.drainWager(getConnection().manager, wager);
-            this.activeWagers.push(wager);
+            await this.activeWagersMutex.runExclusive(async () => {
+                // Let them in to the active game
+                await this.drainWager(getConnection().manager, wager);
+                this.activeWagers.push(wager);
 
-            // Add them to the round safety
-            await this.resetRoundSafety();
+                // Add them to the round safety
+                await this.resetRoundSafety();
 
-            this.UserPlayingStream.next({
-                user: player,
-                isPlaying: "active"
+                this.UserPlayingStream.next({
+                    user: player,
+                    isPlaying: "active"
+                });
             });
         } else {
-            // Queue them for the next game
-            this.pendingWagers.push(wager);
+            await this.pendingWagersMutex.runExclusive(async () => {
+                // Queue them for the next game
+                this.pendingWagers.push(wager);
 
-            this.UserPlayingStream.next({
-                user: player,
-                isPlaying: "pending"
-            });
+                this.UserPlayingStream.next({
+                    user: player,
+                    isPlaying: "pending"
+                });
+            })
         }
     }
 
-    public pullWager(user: User, enforceMultiplier?: number): boolean {
+    public async pullWager(user: User, enforceMultiplier?: number): Promise<boolean> {
+        let ret;
+
         if (enforceMultiplier === undefined) {
-            const pendingIdx = this.pendingWagers.findIndex(wager => wager.player.id === user.id);
-            if (pendingIdx !== -1) {
-                this.pendingWagers.splice(pendingIdx, 1);
-                this.UserPlayingStream.next({
-                    user: user,
-                    isPlaying: false
-                });
+            await this.pendingWagersMutex.runExclusive(() => {
+                const pendingIdx = this.pendingWagers.findIndex(wager => wager.player.id === user.id);
+                if (pendingIdx !== -1) {
+                    this.pendingWagers.splice(pendingIdx, 1);
+                    this.UserPlayingStream.next({
+                        user: user,
+                        isPlaying: false
+                    });
 
-                return true;
-            }
+                    ret = true;
+                }
+            })
         }
 
-        const active = this.activeWagers.find(wager => wager.player.id === user.id);
-        if (active) {
-            if (active.exited) {
-                return false; // Already pulled out
-            } else {
-                const position = enforceMultiplier ?? this.getCurrentMultiplier();
-                active.cashout = Math.min(active.cashout, Math.max(position, 100));
-                active.exited = true;
+        if (ret) return ret;
 
-                this.GameStream.next({
-                    type: GameEvent.PLAYER_CASHEDOUT,
-                    name: active.player.name,
-                    cashout: active.cashout
-                });
+        await this.activeWagersMutex.runExclusive(() => {
+            const active = this.activeWagers.find(wager => wager.player.id === user.id);
+            if (active) {
+                if (active.exited) {
+                    ret = false; // Already pulled out
+                    return;
+                } else {
+                    const position = enforceMultiplier ?? this.getCurrentMultiplier();
+                    active.cashout = Math.min(active.cashout, Math.max(position, 100));
+                    active.exited = true;
 
-                this.UserPlayingStream.next({
-                    user: active.player,
-                    isPlaying: false
-                });
+                    this.GameStream.next({
+                        type: GameEvent.PLAYER_CASHEDOUT,
+                        name: active.player.name,
+                        cashout: active.cashout
+                    });
 
-                logger.debug(chalk`User {yellow ${active.player.name}} cashed out at {magenta ${active.cashout/100}}x`);
-                return true;
+                    this.UserPlayingStream.next({
+                        user: active.player,
+                        isPlaying: false
+                    });
+
+                    logger.debug(chalk`User {yellow ${active.player.name}} cashed out at {magenta ${active.cashout/100}}x`);
+                    ret = true;
+                    return;
+                }
             }
-        }
 
-        return false;
+            ret = false;
+        });
+
+        if (!ret) return false;
+        return ret;
     }
 
     public async nextGame() {
@@ -328,7 +362,7 @@ export class GameService {
                 this.resetRoundSafety();
             } else {
                 for (const wager of this.activeWagers) {
-                    if (this.pullWager(wager.player, safetyCashout)) {
+                    if (await this.pullWager(wager.player, safetyCashout)) {
                         this.CashoutAlertStream.next({ user: wager.player });
                     }
                 }
@@ -368,8 +402,8 @@ export class GameService {
         const effectiveCashout = Math.min(wager.cashout, safetyCashout);
         const length = getRoundLength(effectiveCashout);
         const delta = DateTime.now().minus(this.currentStartDate).toMillis();
-        this.cashoutPool.addTimeout(wager.player.id, () => {
-            if (this.pullWager(wager.player, effectiveCashout)) {
+        this.cashoutPool.addTimeout(wager.player.id, async () => {
+            if (await this.pullWager(wager.player, effectiveCashout)) {
                 if (effectiveCashout === safetyCashout) {
                     this.CashoutAlertStream.next({ user: wager.player });
                 }
@@ -385,17 +419,21 @@ export class GameService {
     }
 
     private async drainPendingWagers() {
-        const wagers = this.pendingWagers;
-        this.pendingWagers = [];
+        await this.pendingWagersMutex.runExclusive(async () => {
+            await this.activeWagersMutex.runExclusive(async () => {
+                const wagers = this.pendingWagers;
+                this.pendingWagers = [];
 
-        await getConnection().transaction(async manager => {
-            for (const wager of wagers) {
-                await this.drainWager(manager, wager);
-            }
-        });
+                await getConnection().transaction(async manager => {
+                    for (const wager of wagers) {
+                        await this.drainWager(manager, wager);
+                    }
+                });
 
-        // In case there was a race where someone got in before the transaction finished
-        this.activeWagers = this.activeWagers.concat(wagers);
+                // In case there was a race where someone got in before the transaction finished
+                this.activeWagers = this.activeWagers.concat(wagers);
+            })
+        })
     }
 
     private scoreWager(bust: number, wager: Wager): number {
@@ -453,33 +491,35 @@ export class GameService {
     }
 
     private async fulfillWagers(bust: number): Promise<number> {
-        const wagers = this.activeWagers;
-        this.activeWagers = [];
-
         let totalProfit = 0;
 
-        await getConnection().transaction(async manager => {
-            for (const wager of wagers) {
-                const profit = this.scoreWager(bust, wager);
-                if (profit > 0) {
-                    await manager.increment(User, { id: wager.player.id }, "balance", profit);
+        await this.activeWagersMutex.runExclusive(async () => {
+            const wagers = this.activeWagers;
+            this.activeWagers = [];
+
+            await getConnection().transaction(async manager => {
+                for (const wager of wagers) {
+                    const profit = this.scoreWager(bust, wager);
+                    if (profit > 0) {
+                        await manager.increment(User, { id: wager.player.id }, "balance", profit);
+                    }
+
+                    // Push this game onto the user's betting history
+                    await this.pushHistoricalBet(manager, wager, profit);
+
+                    totalProfit += profit;
                 }
+            });
 
-                // Push this game onto the user's betting history
-                await this.pushHistoricalBet(manager, wager, profit);
-
-                totalProfit += profit;
+            for (const wager of wagers) {
+                if (!wager.exited) {
+                    this.UserPlayingStream.next({
+                        user: wager.player,
+                        isPlaying: false
+                    });
+                }
             }
         });
-
-        for (const wager of wagers) {
-            if (!wager.exited) {
-                this.UserPlayingStream.next({
-                    user: wager.player,
-                    isPlaying: false
-                });
-            }
-        }
 
         return totalProfit;
     }

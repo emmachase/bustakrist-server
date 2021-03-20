@@ -8,6 +8,7 @@ import { DelayedProp } from "../util/DelayedProp";
 import chalk from "chalk";
 import { getConnection } from "typeorm";
 import { User } from "../entity/User";
+import { kst } from "../util/chalkFormatters";
 
 type CommonMeta = {
     metaname?: string
@@ -192,6 +193,9 @@ export class KristService {
             await manager.increment(User, { id: user.id }, "totalIn", 100*trans.value);
         })
         BalStream.next({ user: user.name })
+
+        const safeFrom = this.getSafeReturn(trans.from, this.parseCommonMeta(trans.metadata));
+        logger.info(chalk`Recieved ${kst(Math.floor(trans.value))} from {magenta ${safeFrom}} for user {cyan ${user.name}}`);
     }
 
     private async makeRequest(type: "me"): Promise<{ isGuest: true } | { isGuest: false, address: KristAddress }>;

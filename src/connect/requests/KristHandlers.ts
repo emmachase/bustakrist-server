@@ -1,7 +1,10 @@
+import chalk from "chalk";
 import { getConnection } from "typeorm";
 import Schema from "validate";
 import { User } from "../../entity/User";
+import { logger } from "../../logger";
 import { BalStream, KristService } from "../../services/KristService";
+import { kst } from "../../util/chalkFormatters";
 import { RequestHandler, RequestMessage, SocketUser } from "../socketUser";
 import { ErrorCode, ErrorDetail, RequestCode } from "../transportCodes";
 
@@ -47,7 +50,9 @@ export class KristHandlers extends SocketUser {
                 await manager.decrement(User, { id: this.authedUser!.id }, "balance", amount);
                 await manager.increment(User, { id: this.authedUser!.id }, "totalOut", amount);
                 await KristService.instance.makeWithdrawal(name, data.to!, Math.floor(data.amount!));
-            })
+            });
+
+            logger.info(chalk`User {cyan ${this.authedUser.name}} withdrew ${kst(Math.floor(amount))}`);
 
             await this.refresh();
             return req.replySuccess({
