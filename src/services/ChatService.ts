@@ -1,4 +1,5 @@
 import chalk from "chalk";
+import { uid } from 'uid/secure';
 import { Subject } from "rxjs";
 import { getConnection } from "typeorm";
 import { getConfig } from "../config";
@@ -30,11 +31,26 @@ export class ChatService extends Subject<ChatEvent> {
         super();
     }
 
+    previousIds: string[] = [];
+    getId(): string {
+        let id: string;
+
+        do {
+            id = uid();
+        } while(this.previousIds.includes(id));
+
+        this.previousIds = this.previousIds.slice(-255);
+        this.previousIds.push(id);
+
+        return id;
+    }
+
     public sendMessage(msg: {from: string, message: string, to?: string}): void {
         logger.info(chalk`{magenta.bold ${msg.from}}: ${msg.message} -> {cyan ${msg.to ?? "Global"}}`);
 
         const privateMsg = !!msg.to;
         const event = {
+            id: this.getId(),
             from: msg.from,
             message: msg.message,
             to: msg.to,
