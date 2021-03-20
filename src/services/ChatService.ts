@@ -7,8 +7,9 @@ import { getAllConnections } from "../connect/socketmanager";
 import { Ban } from "../entity/Ban";
 import { User } from "../entity/User";
 import { logger } from "../logger";
-import { BalStream } from "./KristService";
+import { BalStream, KristService } from "./KristService";
 import { GameService } from "./GameService";
+import { kstF2 } from "../util/chalkFormatters";
 
 interface ChatEvent {
     from: string // Username
@@ -99,6 +100,14 @@ export class ChatService extends Subject<ChatEvent> {
                     });
                 }
             }
+        } else if (event.message.startsWith("!bankroll")) {
+            const bankroll = await KristService.instance.getUnallocatedBalance();
+
+            this.next({
+                from: "<SYSTEM>",
+                message: `The current bankroll is ${bankroll.toFixed(2)}KST`,
+                timestamp: +new Date(),
+            });
         } else if (event.message.startsWith("!banip")) {
             if (event.from !== "emma") {
                 return this.next({
