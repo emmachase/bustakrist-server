@@ -390,10 +390,10 @@ export class SocketUser {
 
     public notifyLeave() {
         if (this.authedUser) {
-            ChatService.instance.sendMessage({
-                from: this.authedUser.name,
-                message: "<left the chat>"
-            });
+            // ChatService.instance.sendMessage({
+            //     from: this.authedUser.name,
+            //     message: "<left the chat>"
+            // });
         }
     }
 
