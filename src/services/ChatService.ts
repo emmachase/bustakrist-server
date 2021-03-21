@@ -309,6 +309,12 @@ export class ChatService extends Subject<ChatEvent> {
                     timestamp: +new Date(),
                 });
             }
+        } else if (event.message.startsWith("!nextgame")) {
+            this.next({
+                from: "<SYSTEM>",
+                message: `The next game will be game/seed #${GameService.instance.nextGameID.toLocaleString()}.`,
+                timestamp: +new Date(),
+            });
         }
     }
 }

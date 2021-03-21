@@ -76,7 +76,7 @@ export class GameService {
         user: User
     }> = new Subject();
 
-    private nextGameID: number;
+    public nextGameID: number;
     public gameIsRunning: boolean = false;
     public previousGames: ExecutedGame[] = [];
     private currentExecutingGame: ExecutedGame;
