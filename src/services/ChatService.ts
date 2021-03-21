@@ -47,7 +47,7 @@ export class ChatService extends Subject<ChatEvent> {
         return id;
     }
 
-    public sendMessage(msg: {from: string, message: string, to?: string}): void {
+    public sendMessage(msg: {from: string, message: string, to?: string, simulated?: boolean}): void {
         logger.info(chalk`{magenta.bold ${msg.from}}: ${msg.message} -> {cyan ${msg.to ?? "Global"}}`);
 
         const privateMsg = !!msg.to;
@@ -67,7 +67,9 @@ export class ChatService extends Subject<ChatEvent> {
 
         this.next(event);
 
-        this.checkCommand(event);
+        if (!msg.simulated) {
+            this.checkCommand(event);
+        }
     }
 
     private async checkCommand(event: {
@@ -87,40 +89,40 @@ export class ChatService extends Subject<ChatEvent> {
                 });
 
                 if (user) {
-                    this.next({
+                    this.sendMessage({
                         from: "<SYSTEM>",
                         message: `${username} has ${user?.balance / 100}KST`,
-                        timestamp: +new Date(),
+                        simulated: true
                     });
                 } else {
-                    this.next({
+                    this.sendMessage({
                         from: "<SYSTEM>",
                         message: `There is no user named ${username}`,
-                        timestamp: +new Date(),
+                        simulated: true
                     });
                 }
             }
         } else if (event.message.startsWith("!bankroll")) {
             const bankroll = await KristService.instance.getUnallocatedBalance();
 
-            this.next({
+            this.sendMessage({
                 from: "<SYSTEM>",
                 message: `The current bankroll is ${(bankroll/100).toLocaleString("en-US", {
                     minimumFractionDigits: 2,
                     maximumFractionDigits: 2,
                 })}KST`,
-                timestamp: +new Date(),
+                simulated: true
             });
-        } else if (event.message.startsWith("!banip")) {
+        } else if (event.message.startsWith("!ipban")) {
             if (event.from !== "emma") {
-                return this.next({
+                return this.sendMessage({
                     from: "<SYSTEM>",
                     message: `You are not authorized to run this command.`,
-                    timestamp: +new Date(),
+                    simulated: true
                 });
             }
 
-            const target = event.message.match(/^!banip (\w+)/);
+            const target = event.message.match(/^!ipban (\w+)/);
             if (target && target[1]) {
                 const username = target[1];
                 let ips = new Set<string>();
@@ -141,25 +143,25 @@ export class ChatService extends Subject<ChatEvent> {
                         await getConnection().manager.save(ban);
                     }
 
-                    this.next({
+                    this.sendMessage({
                         from: "<SYSTEM>",
                         message: `${username} has been ip-banned.`,
-                        timestamp: +new Date(),
+                        simulated: true
                     });
                 } else {
-                    this.next({
+                    this.sendMessage({
                         from: "<SYSTEM>",
                         message: `There is no user named ${username} online`,
-                        timestamp: +new Date(),
+                        simulated: true
                     });
                 }
             }
         } else if (event.message.startsWith("!ban")) {
             if (event.from !== "emma") {
-                return this.next({
+                return this.sendMessage({
                     from: "<SYSTEM>",
                     message: `You are not authorized to run this command.`,
-                    timestamp: +new Date(),
+                    simulated: true
                 });
             }
 
@@ -181,25 +183,25 @@ export class ChatService extends Subject<ChatEvent> {
                     user.banned = true;
                     await getConnection().manager.save(user);
 
-                    this.next({
+                    this.sendMessage({
                         from: "<SYSTEM>",
                         message: `${username} has been banned.`,
-                        timestamp: +new Date(),
+                        simulated: true
                     });
                 } else {
-                    this.next({
+                    this.sendMessage({
                         from: "<SYSTEM>",
                         message: `There is no user named ${username}.`,
-                        timestamp: +new Date(),
+                        simulated: true
                     });
                 }
             }
         } else if (event.message.startsWith("!rawgive")) {
             if (event.from !== "emma") {
-                return this.next({
+                return this.sendMessage({
                     from: "<SYSTEM>",
                     message: `You are not authorized to run this command.`,
-                    timestamp: +new Date(),
+                    simulated: true
                 });
             }
 
@@ -218,25 +220,25 @@ export class ChatService extends Subject<ChatEvent> {
                     await getConnection().manager.increment(User, { id: user.id }, "balance", amount);
                     BalStream.next({ user: user.name });
 
-                    this.next({
+                    this.sendMessage({
                         from: "<SYSTEM>",
                         message: `${username}'s balance was raw modified by ${amount}.`,
-                        timestamp: +new Date(),
+                        simulated: true
                     });
                 } else {
-                    this.next({
+                    this.sendMessage({
                         from: "<SYSTEM>",
                         message: `There is no user named ${username}.`,
-                        timestamp: +new Date(),
+                        simulated: true
                     });
                 }
             }
         } else if (event.message.startsWith("!give")) {
             if (event.from !== "emma") {
-                return this.next({
+                return this.sendMessage({
                     from: "<SYSTEM>",
                     message: `You are not authorized to run this command.`,
-                    timestamp: +new Date(),
+                    simulated: true
                 });
             }
 
@@ -258,63 +260,63 @@ export class ChatService extends Subject<ChatEvent> {
                     })
                     BalStream.next({ user: user.name });
                     
-                    this.next({
+                    this.sendMessage({
                         from: "<SYSTEM>",
                         message: `Gave ${username} ${(amount/100).toFixed(2)}KST.`,
-                        timestamp: +new Date(),
+                        simulated: true
                     });
                 } else {
-                    this.next({
+                    this.sendMessage({
                         from: "<SYSTEM>",
                         message: `There is no user named ${username}.`,
-                        timestamp: +new Date(),
+                        simulated: true
                     });
                 }
             }
         } else if (event.message.startsWith("!pause")) {
             if (event.from !== "emma") {
-                return this.next({
+                return this.sendMessage({
                     from: "<SYSTEM>",
                     message: `You are not authorized to run this command.`,
-                    timestamp: +new Date(),
+                    simulated: true
                 });
             }
 
             GameService.instance.requestPause();
 
-            this.next({
+            this.sendMessage({
                 from: "<SYSTEM>",
                 message: `A pause has been requested.`,
-                timestamp: +new Date(),
+                simulated: true
             });
         } else if (event.message.startsWith("!unpause")) {
             if (event.from !== "emma") {
-                return this.next({
+                return this.sendMessage({
                     from: "<SYSTEM>",
                     message: `You are not authorized to run this command.`,
-                    timestamp: +new Date(),
+                    simulated: true
                 });
             }
 
             if (GameService.instance.unpause()) {
-                this.next({
+                this.sendMessage({
                     from: "<SYSTEM>",
                     message: `The game has been resumed.`,
-                    timestamp: +new Date(),
+                    simulated: true
                 });
             } else {
-                this.next({
+                this.sendMessage({
                     from: "<SYSTEM>",
                     message: `The game is not paused.`,
-                    timestamp: +new Date(),
+                    simulated: true
                 });
             }
         } else if (event.message.startsWith("!forcesync")) {
             if (event.from !== "emma") {
-                return this.next({
+                return this.sendMessage({
                     from: "<SYSTEM>",
                     message: `You are not authorized to run this command.`,
-                    timestamp: +new Date(),
+                    simulated: true
                 });
             }
 
@@ -322,10 +324,10 @@ export class ChatService extends Subject<ChatEvent> {
                 connection.forceSync();
             });
         } else if (event.message.startsWith("!nextgame")) {
-            this.next({
+            this.sendMessage({
                 from: "<SYSTEM>",
                 message: `The next game will be game/seed #${GameService.instance.nextGameID.toLocaleString()}.`,
-                timestamp: +new Date(),
+                simulated: true
             });
         }
     }
