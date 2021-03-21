@@ -6,11 +6,13 @@ chalk.level = 2;
 
 const logger_i = winston.createLogger({
   level: getConfig().system.logLevel ?? "info",
-  format: winston.format.json(),
+  format: winston.format.combine(
+    winston.format.colorize(),
+    winston.format.timestamp({format:'YYYY-MM-DD HH:mm:ss'}),
+    winston.format.printf(info => chalk`{gray ${info.timestamp}} ${info.level}: ${info.message}`+(info.splat!==undefined?`${info.splat}`:" "))
+  ),
   transports: [
-    new winston.transports.Console({
-        format: winston.format.combine(winston.format.colorize(), winston.format.simple()),
-    })
+    new winston.transports.Console()
   ],
 });
 

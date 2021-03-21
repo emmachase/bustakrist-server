@@ -380,7 +380,7 @@ export class GameService {
         });
 
         logger.debug(chalk`Busted!`);
-        logger.info(chalk`Round ended with {cyan ${totalWagered
+        logger.info(chalk`Round ended at {bold ${(bustAt/100).toFixed(2)}X} with {cyan ${totalWagered
             }KST} wagered, and {yellow ${totalProfit/100
             }KST} profited ({magenta ${(totalWagered*100 - totalProfit)/100}KST} server profit).`);
 

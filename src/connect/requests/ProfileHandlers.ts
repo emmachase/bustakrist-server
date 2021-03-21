@@ -30,10 +30,8 @@ export class ProfileHandlers extends SocketUser {
             .select("SUM(bet)", "wagered").where({ user }).execute())[0].wagered;
 
         // Account for if they're currently in a game
-        console.log(GameService.instance.getState().wagers);
         const currentWager = GameService.instance.getState().wagers.find(x => x.player.name === user.name);
         const currentOffset = currentWager ? currentWager.wager : 0;
-        console.log(currentWager, currentOffset);
 
         return req.replySuccess({
             joined: +user.joined,
