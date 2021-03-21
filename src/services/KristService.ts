@@ -183,7 +183,10 @@ export class KristService {
             return void await this.makeRefund(trans, "No username specified, send to username@" + trans.sent_name + ".kst");
         };
 
-        const user = await getConnection().manager.findOne(User, { where: { name: trans.sent_metaname }, select: [ "id", "name" ] });
+        const user = await getConnection().manager.createQueryBuilder(User, "user")
+            .where("LOWER(user.name) = LOWER(:name)", { name: trans.sent_metaname })
+            .getOne();
+
         if (!user) {
             return void await this.makeRefund(trans, "The user '" + trans.sent_metaname + "' does not exist");
         }
