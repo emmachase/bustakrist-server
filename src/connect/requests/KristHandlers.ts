@@ -52,7 +52,7 @@ export class KristHandlers extends SocketUser {
                 await KristService.instance.makeWithdrawal(name, data.to!, Math.floor(data.amount!));
             });
 
-            logger.info(chalk`User {cyan ${this.authedUser.name}} withdrew ${kst(Math.floor(amount))}`);
+            logger.info(chalk`User {cyan ${this.authedUser.name}} withdrew ${kst(Math.floor(amount/100))}`);
 
             await this.refresh();
             return req.replySuccess({
