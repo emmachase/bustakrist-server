@@ -381,10 +381,10 @@ export class SocketUser {
 
     public notifyJoin() {
         if (this.authedUser) {
-            ChatService.instance.sendMessage({
-                from: this.authedUser?.name!, 
-                message: "<joined the chat>"
-            });
+            // ChatService.instance.sendMessage({
+            //     from: this.authedUser?.name!, 
+            //     message: "<joined the chat>"
+            // });
         }
     }
 
