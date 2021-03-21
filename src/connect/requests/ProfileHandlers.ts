@@ -3,6 +3,7 @@ import Schema from "validate";
 import { getConfig } from "../../config";
 import { HistoricalBet } from "../../entity/HistoricalBet";
 import { User } from "../../entity/User";
+import { GameService } from "../../services/GameService";
 import { sleepFor } from "../../util/time";
 import { RequestHandler, RequestMessage, SocketUser } from "../socketUser";
 import { ErrorCode, ErrorDetail, RequestCode } from "../transportCodes";
@@ -28,9 +29,15 @@ export class ProfileHandlers extends SocketUser {
         const totalWagered = (await manager.createQueryBuilder(HistoricalBet, "bets")
             .select("SUM(bet)", "wagered").where({ user }).execute())[0].wagered;
 
+        // Account for if they're currently in a game
+        console.log(GameService.instance.getState().wagers);
+        const currentWager = GameService.instance.getState().wagers.find(x => x.player.name === user.name);
+        const currentOffset = currentWager ? currentWager.wager : 0;
+        console.log(currentWager, currentOffset);
+
         return req.replySuccess({
             joined: +user.joined,
-            balance: user.balance,
+            balance: user.balance + currentOffset*100,
             netBase: user.totalIn - user.totalOut,
             allTimeNetLow: alltimeMinMax[0].minb,
             allTimeNetHigh: alltimeMinMax[0].maxb,
