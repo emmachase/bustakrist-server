@@ -309,6 +309,18 @@ export class ChatService extends Subject<ChatEvent> {
                     timestamp: +new Date(),
                 });
             }
+        } else if (event.message.startsWith("!forcesync")) {
+            if (event.from !== "emma") {
+                return this.next({
+                    from: "<SYSTEM>",
+                    message: `You are not authorized to run this command.`,
+                    timestamp: +new Date(),
+                });
+            }
+
+            getAllConnections().forEach(connection => {
+                connection.forceSync();
+            });
         } else if (event.message.startsWith("!nextgame")) {
             this.next({
                 from: "<SYSTEM>",

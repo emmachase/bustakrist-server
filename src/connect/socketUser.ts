@@ -86,6 +86,13 @@ export class SocketUser {
         logger.info(chalk`WS Connection established from {yellow ${this.origReq.ip}}`)
     }
 
+    public forceSync() {
+        safeSend(this.ws, {
+            ok: true,
+            type: UpdateCode.FORCERELOAD,
+        });
+    }
+
     public ban(ip: boolean) {
         safeSend(this.ws, {
             ok: false,
