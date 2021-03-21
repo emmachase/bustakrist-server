@@ -10,6 +10,7 @@ import argon2 from "argon2";
 import { ChatService } from "../../services/ChatService";
 import { safeSend } from "../socketmanager";
 import { GameService } from "../../services/GameService";
+import { Ban } from "../../entity/Ban";
 
 const normalName = (val: string) => /^[0-9a-zA-Z_\-$]+$/.test(val)
 
@@ -104,6 +105,17 @@ export class AuthHandlers extends SocketUser {
             return req.replyFail(ErrorCode.BANNED);
         }
 
+        if (await getConnection().manager.findOne(Ban, undefined, {where: {ip: this.origReq.ip}})) {
+            safeSend(this.ws, {
+                ok: false,
+                type: UpdateCode.HELLO,
+                errorType: ErrorCode.BANNED,
+                error: "Your IP has been banned"
+            });
+
+            this.ws.close();
+        }
+
         logger.info(chalk`Login attempt from {yellow ${this.ip}} as {cyan ${data.name}} ({green.bold SUCCESS})`);
         this.authedUser = fullUser!;
 
@@ -143,6 +155,17 @@ export class AuthHandlers extends SocketUser {
 
         if (!trueUser || trueUser.banned) {
             return req.replyFail(ErrorCode.BANNED);
+        }
+
+        if (await getConnection().manager.findOne(Ban, undefined, {where: {ip: this.origReq.ip}})) {
+            safeSend(this.ws, {
+                ok: false,
+                type: UpdateCode.HELLO,
+                errorType: ErrorCode.BANNED,
+                error: "Your IP has been banned"
+            });
+
+            this.ws.close();
         }
 
         logger.info(chalk`Reauth attempt from {yellow ${this.ip}} as {cyan ${trueUser.name}} ({green.bold SUCCESS})`);
