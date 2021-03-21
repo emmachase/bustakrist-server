@@ -76,12 +76,14 @@ export class SocketUser {
 
         ws.on("message", this.handleMessage.bind(this));
         ws.on("close", this.die.bind(this));
+    }
 
+    public initialize() {
         this.presendHistory();
 
         this.registerObservers();
 
-        logger.info(chalk`WS Connection established from {yellow ${req.ip}}`)
+        logger.info(chalk`WS Connection established from {yellow ${this.origReq.ip}}`)
     }
 
     public ban(ip: boolean) {

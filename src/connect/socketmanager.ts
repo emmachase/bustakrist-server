@@ -27,8 +27,11 @@ export function getAllConnections() {
 }
 
 export function setupSocket(ws: WebSocket, req: Request) {
-    connections.push(new SocketUser(ws, req));
+    const sock = new SocketUser(ws, req);
+    connections.push(sock);
     ConnectionStream.next();
+    
+    return sock;
 }
 
 export function pruneSockets() {
@@ -69,6 +72,15 @@ export function initSockets() {
     const app = getExpress();
 
     app.ws("/api/sock", async (ws, req) => {
+        const sock = setupSocket(ws, req);
+        
+        safeSend(ws, {
+            ok: true,
+            type: UpdateCode.HELLO
+        });
+
+        sock.initialize();
+
         if (await getConnection().manager.findOne(Ban, undefined, {where: {ip: req.ip}})) {
             safeSend(ws, {
                 ok: false,
@@ -79,13 +91,6 @@ export function initSockets() {
 
             ws.close();
         }
-
-        safeSend(ws, {
-            ok: true,
-            type: UpdateCode.HELLO
-        });
-
-        setupSocket(ws, req);
     });
 
 }
