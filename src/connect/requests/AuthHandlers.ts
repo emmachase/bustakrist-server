@@ -114,6 +114,7 @@ export class AuthHandlers extends SocketUser {
             });
 
             this.ws.close();
+            return;
         }
 
         logger.info(chalk`Login attempt from {yellow ${this.ip}} as {cyan ${data.name}} ({green.bold SUCCESS})`);
@@ -166,6 +167,7 @@ export class AuthHandlers extends SocketUser {
             });
 
             this.ws.close();
+            return;
         }
 
         logger.info(chalk`Reauth attempt from {yellow ${this.ip}} as {cyan ${trueUser.name}} ({green.bold SUCCESS})`);
