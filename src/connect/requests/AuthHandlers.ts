@@ -141,6 +141,10 @@ export class AuthHandlers extends SocketUser {
             return req.replyFail(ErrorCode.UNAUTHORIZED, ErrorDetail.INVALID_CREDENTIALS);
         }
 
+        if (!trueUser || trueUser.banned) {
+            return req.replyFail(ErrorCode.BANNED);
+        }
+
         logger.info(chalk`Reauth attempt from {yellow ${this.ip}} as {cyan ${trueUser.name}} ({green.bold SUCCESS})`);
         this.authedUser = (await getConnection().manager.findOne(User, {
             where: { name: trueUser.name },
