@@ -163,7 +163,7 @@ export class ChatService extends Subject<ChatEvent> {
                 });
             }
 
-            const target = event.message.match(/^!banip (\w+)/);
+            const target = event.message.match(/^!ban (\w+)/);
             if (target && target[1]) {
                 const username = target[1];
                 const user = await getConnection().manager.findOne(User, {
