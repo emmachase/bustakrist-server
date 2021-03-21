@@ -72,6 +72,18 @@ export function initSockets() {
     const app = getExpress();
 
     app.ws("/api/sock", async (ws, req) => {
+        const version = req.query.v ?? null;
+        if (version !== "2") {
+            safeSend(ws, {
+                ok: false,
+                type: UpdateCode.HELLO,
+                errorType: ErrorCode.UNFULFILLABLE,
+                error: "You are using an outdated protocol version"
+            });
+
+            return ws.close();
+        }
+
         const sock = setupSocket(ws, req);
         
         safeSend(ws, {
