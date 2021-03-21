@@ -362,7 +362,7 @@ export class ChatService extends Subject<ChatEvent> {
 
                 return this.sendMessage({
                     from: "<SYSTEM>",
-                    message: `It last busted under ${(bust/100).toFixed(2)}, at ${(lastItem.bustedAt/100).toFixed(2)}, in game ${lastItem.id} (${GameService.instance.currentGameID - lastItem.id} games ago).`,
+                    message: `It last busted under ${(bust/100).toFixed(2)}X, at ${(lastItem.bustedAt/100).toFixed(2)}X, in game ${lastItem.id} (${GameService.instance.currentGameID - lastItem.id} games ago).`,
                     simulated: true
                 });
             }
@@ -398,7 +398,7 @@ export class ChatService extends Subject<ChatEvent> {
 
                 return this.sendMessage({
                     from: "<SYSTEM>",
-                    message: `It last busted above ${(bust/100).toFixed(2)}, at ${(lastItem.bustedAt/100).toFixed(2)}, in game ${lastItem.id} (${GameService.instance.currentGameID - lastItem.id} games ago).`,
+                    message: `It last busted above ${(bust/100).toFixed(2)}X, at ${(lastItem.bustedAt/100).toFixed(2)}X, in game ${lastItem.id} (${GameService.instance.currentGameID - lastItem.id} games ago).`,
                     simulated: true
                 });
             }
