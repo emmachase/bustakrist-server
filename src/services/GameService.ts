@@ -80,7 +80,7 @@ export class GameService {
     public gameIsRunning: boolean = false;
     public previousGames: ExecutedGame[] = [];
     private currentExecutingGame: ExecutedGame;
-    private currentGameID: number;
+    public currentGameID: number;
     private currentGameSeed: Buffer;
     private currentStartDate: number;
     private currentGameBusted: number | undefined;

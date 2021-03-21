@@ -1,7 +1,7 @@
 import chalk from "chalk";
 import { uid } from 'uid/secure';
 import { Subject } from "rxjs";
-import { getConnection } from "typeorm";
+import { getConnection, LessThan, MoreThan } from "typeorm";
 import { getConfig } from "../config";
 import { getAllConnections } from "../connect/socketmanager";
 import { Ban } from "../entity/Ban";
@@ -10,6 +10,7 @@ import { logger } from "../logger";
 import { BalStream, KristService } from "./KristService";
 import { GameService } from "./GameService";
 import { kstF2 } from "../util/chalkFormatters";
+import { ExecutedGame } from "../entity/ExecutedGame";
 
 interface ChatEvent {
     from: string // Username
@@ -329,6 +330,78 @@ export class ChatService extends Subject<ChatEvent> {
                 message: `The next game will be game/seed #${GameService.instance.nextGameID.toLocaleString()}.`,
                 simulated: true
             });
+        } else if (event.message.startsWith("!lastunder")) {
+            const parts = event.message.split(/\s+/);
+            parts.shift(); // remove cmd header
+
+            // select * from executed_game where bustedAt > 2000 order by id desc limit 1;
+            if (parts && parts[0]) {
+                const bust = Math.floor(100*+parts[0])
+                if (isNaN(bust)) {
+                    return this.sendMessage({
+                        from: "<SYSTEM>",
+                        message: `Not a valid bust multiplier.`,
+                        simulated: true
+                    });
+                }
+
+                const lastItem = await getConnection().manager
+                    .createQueryBuilder(ExecutedGame, "executed_game")
+                    .where({ bustedAt: LessThan(bust) })
+                    .orderBy({ id: "DESC" })
+                    .take(1)
+                    .getOne();
+
+                if (!lastItem) {
+                    return this.sendMessage({
+                        from: "<SYSTEM>",
+                        message: `It has yet to bust under ${(bust/100).toFixed(2)}.`,
+                        simulated: true
+                    });
+                }
+
+                return this.sendMessage({
+                    from: "<SYSTEM>",
+                    message: `It last busted under ${(bust/100).toFixed(2)}, at ${(lastItem.bustedAt/100).toFixed(2)}, in game ${lastItem.id} (${GameService.instance.currentGameID} games ago).`,
+                    simulated: true
+                });
+            }
+        } else if (event.message.startsWith("!lastabove")) {
+            const parts = event.message.split(/\s+/);
+            parts.shift(); // remove cmd header
+
+            // select * from executed_game where bustedAt > 2000 order by id desc limit 1;
+            if (parts && parts[0]) {
+                const bust = Math.floor(100*+parts[0])
+                if (isNaN(bust)) {
+                    return this.sendMessage({
+                        from: "<SYSTEM>",
+                        message: `Not a valid bust multiplier.`,
+                        simulated: true
+                    });
+                }
+
+                const lastItem = await getConnection().manager
+                    .createQueryBuilder(ExecutedGame, "executed_game")
+                    .where({ bustedAt: MoreThan(bust) })
+                    .orderBy({ id: "DESC" })
+                    .take(1)
+                    .getOne();
+
+                if (!lastItem) {
+                    return this.sendMessage({
+                        from: "<SYSTEM>",
+                        message: `It has yet to bust above ${(bust/100).toFixed(2)}.`,
+                        simulated: true
+                    });
+                }
+
+                return this.sendMessage({
+                    from: "<SYSTEM>",
+                    message: `It last busted above ${(bust/100).toFixed(2)}, at ${(lastItem.bustedAt/100).toFixed(2)}, in game ${lastItem.id} (${GameService.instance.currentGameID} games ago).`,
+                    simulated: true
+                });
+            }
         }
     }
 }
