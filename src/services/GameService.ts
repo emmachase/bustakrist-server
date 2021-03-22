@@ -351,7 +351,7 @@ export class GameService {
         });
 
         // Enact round safety
-        const totalWagered = this.countTotalWagered();
+        let totalWagered = this.countTotalWagered();
         if (totalWagered > 0) {
             await this.resetRoundSafety();
         }
@@ -362,6 +362,7 @@ export class GameService {
         this.cashoutPool.clear();
 
         // Fulfill the wagers as soon as the bust happens
+        totalWagered = this.countTotalWageredNoExit();
         const totalProfit = await this.fulfillWagers(bustAt);
         gameEntity.totalWagered = totalWagered;
         gameEntity.totalProfit = totalProfit;
@@ -535,6 +536,10 @@ export class GameService {
 
     private countTotalWagered(): number {
         return this.activeWagers.reduce((acc, v) => acc + (v.exited ? 0 : v.wager), 0);
+    }
+
+    private countTotalWageredNoExit(): number {
+        return this.activeWagers.reduce((acc, v) => acc + v.wager, 0);
     }
 
     private countProfited(): number {
