@@ -257,7 +257,12 @@ export class ChatService extends Subject<ChatEvent> {
                     const amount = Math.floor(+parts[1]*100) || 0;
                     await getConnection().manager.transaction(async manager => {
                         await manager.increment(User, { id: user.id }, "balance", amount);
-                        await manager.increment(User, { id: user.id }, "totalIn", amount);
+
+                        if (amount > 0) {
+                            await manager.increment(User, { id: user.id }, "totalIn", amount);
+                        } else {
+                            await manager.increment(User, { id: user.id }, "totalOut", amount);
+                        }
                     })
                     BalStream.next({ user: user.name });
                     
