@@ -328,15 +328,6 @@ export class GameService {
         const bustAtTime = this.currentStartDate + roundLengthMS;
         logger.debug(chalk`Will bust at: {magenta.bold ${bustAt/100}}x on {bold ${DateTime.fromMillis(bustAtTime).toRFC2822()}}`);
 
-        // Save the game to the DB beforehand incase of spontaneous crashes or smth idk
-        const gameEntity = new ExecutedGame();
-        this.currentExecutingGame = gameEntity;
-        gameEntity.id = this.currentGameID;
-        gameEntity.hash = gameHash;
-        gameEntity.bustedAt = bustAt;
-        gameEntity.totalWagered = 0;
-        getConnection().manager.save(gameEntity);
-
         this.GameStream.next({
             type: GameEvent.ANNOUNCE_START,
             start: this.currentStartDate,
@@ -364,6 +355,13 @@ export class GameService {
         // Fulfill the wagers as soon as the bust happens
         totalWagered = this.countTotalWageredNoExit();
         const totalProfit = await this.fulfillWagers(bustAt);
+
+        // Save the game to the DB
+        const gameEntity = new ExecutedGame();
+        this.currentExecutingGame = gameEntity;
+        gameEntity.id = this.currentGameID;
+        gameEntity.hash = gameHash;
+        gameEntity.bustedAt = bustAt;
         gameEntity.totalWagered = totalWagered;
         gameEntity.totalProfit = totalProfit;
         getConnection().manager.save(gameEntity); // Finalize the executed game
