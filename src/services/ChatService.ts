@@ -352,7 +352,7 @@ export class ChatService extends Subject<ChatEvent> {
 
                 const lastItem = await getConnection().manager
                     .createQueryBuilder(ExecutedGame, "executed_game")
-                    .where({ bustedAt: LessThan(bust) })
+                    .where({ bustedAt: LessThan(bust), id: LessThan(GameService.instance.currentGameID) })
                     .orderBy({ id: "DESC" })
                     .take(1)
                     .getOne();
@@ -388,7 +388,7 @@ export class ChatService extends Subject<ChatEvent> {
 
                 const lastItem = await getConnection().manager
                     .createQueryBuilder(ExecutedGame, "executed_game")
-                    .where({ bustedAt: MoreThan(bust) })
+                    .where({ bustedAt: MoreThan(bust), id: LessThan(GameService.instance.currentGameID) })
                     .orderBy({ id: "DESC" })
                     .take(1)
                     .getOne();
