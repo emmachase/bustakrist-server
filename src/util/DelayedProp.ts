@@ -1,12 +1,12 @@
 export class DelayedProp<T> {
     private queue: ((x: T) => void)[] = [];
 
-    private initalized: boolean = false;
+    private initialized: boolean = false;
     private _value?: T = undefined;
     public setValue(x: T) {
         this._value = x;
 
-        if (!this.initalized) {
+        if (!this.initialized) {
             for (const cb of this.queue) {
                 cb(x);
             }
@@ -14,11 +14,11 @@ export class DelayedProp<T> {
             this.queue = [];
         }
 
-        this.initalized = true;
+        this.initialized = true;
     }
 
     public async getValue(): Promise<T> {
-        if (this.initalized) {
+        if (this.initialized) {
             return this._value!;
         }
 
@@ -30,6 +30,6 @@ export class DelayedProp<T> {
     }
 
     public reset() {
-        this.initalized = false;
+        this.initialized = false;
     }
 }

@@ -9,6 +9,7 @@ import chalk from "chalk";
 import { getConnection } from "typeorm";
 import { User } from "../entity/User";
 import { kst } from "../util/chalkFormatters";
+import { GameService } from "./GameService";
 
 type CommonMeta = {
     metaname?: string
@@ -93,6 +94,8 @@ export class KristService {
     private constructor() {}
 
     public async tryConnect() {
+        logger.info("Connecting to Krist...");
+
         const startRes = await axios(`https://${getConfig().krist.node}/ws/start`, {
             method: "POST",
             params: { privatekey: getConfig().krist.pkey }
@@ -248,14 +251,14 @@ export class KristService {
     }
 
     private async onClose() {
-        this.walletTotalBalance.reset();
+        GameService.instance.requestPause();
 
         while (true) {
             try {
                 logger.error("Lost connection to Krist, reconnecting in " + getConfig().krist.connectionBounce + " seconds");
                 await sleepFor(getConfig().krist.connectionBounce * SECOND);
 
-                this.tryConnect();
+                await this.tryConnect();
                 break;
             } catch {}
         }
