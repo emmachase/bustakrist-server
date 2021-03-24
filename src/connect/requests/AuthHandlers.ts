@@ -66,16 +66,16 @@ export class AuthHandlers extends SocketUser {
 
         // Not necessary to await, this doesn't affect the login flow
         getConnection().manager.save(this.authedUser);
-        this.notifyJoin();
-
-        await this.sendAuthedGameState();
-
-        return req.replySuccess({
+        
+        req.replySuccess({
             user: this.authedUser.name,
             bal: this.authedUser.balance,
             token: this.authedUser.loginToken,
             friends: this.authedUser.friends.map(x => x.name),
         });
+
+        await this.sendAuthedGameState();
+        await this.notifyJoin();
     }
 
     @RequestHandler(RequestCode.LOGIN)
@@ -124,16 +124,17 @@ export class AuthHandlers extends SocketUser {
 
         // Not necessary to await, this doesn't affect the login flow
         getConnection().manager.save(this.authedUser);
-        this.notifyJoin();
-
-        await this.sendAuthedGameState();
-
-        return req.replySuccess({
+        
+        
+        req.replySuccess({
             user: this.authedUser.name,
             bal: this.authedUser.balance,
             token: this.authedUser.loginToken,
             friends: this.authedUser.friends.map(x => x.name),
         });
+
+        await this.sendAuthedGameState();
+        await this.notifyJoin();
     }
 
     @RequestHandler(RequestCode.REAUTH)
@@ -176,16 +177,16 @@ export class AuthHandlers extends SocketUser {
             relations: [ "friends" ]
         }))!;
 
-        this.notifyJoin();
-
-        await this.sendAuthedGameState();
-
-        return req.replySuccess({
+        
+        req.replySuccess({
             user: this.authedUser.name,
             bal: this.authedUser.balance,
             token: this.authedUser.loginToken,
             friends: this.authedUser.friends.map(x => x.name),
         });
+
+        await this.sendAuthedGameState();
+        await this.notifyJoin();
     }
 
     @RequestHandler(RequestCode.LOGOUT)

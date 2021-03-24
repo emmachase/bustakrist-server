@@ -169,13 +169,13 @@ export class SocketUser {
         });
 
         // Chat History
-        for (const next of ChatService.instance.globalHistory) {
-            safeSend(this.ws, {
-                ok: true,
-                type: UpdateCode.MESSAGE,
-                data: next,
-            });
-        }
+        safeSend(this.ws, {
+            ok: true,
+            type: UpdateCode.MESSAGE_HISTORY,
+            data: {
+                history: ChatService.instance.globalHistory,
+            }
+        });
     }
 
     private destruct() {
@@ -379,12 +379,23 @@ export class SocketUser {
         this.authedUser = await getConnection().manager.findOne(User, this.authedUser.id);
     }
 
-    public notifyJoin() {
+    public async notifyJoin() {
         if (this.authedUser) {
             // ChatService.instance.sendMessage({
             //     from: this.authedUser?.name!, 
             //     message: "<joined the chat>"
             // });
+
+            for (const friend of this.authedUser.friends) {
+                safeSend(this.ws, {
+                    ok: true,
+                    type: UpdateCode.MESSAGE_HISTORY,
+                    data: {
+                        for: friend.name,
+                        history: await ChatService.instance.getDMHistory(this.authedUser.name, friend.name),
+                    }
+                });
+            }
         }
     }
 

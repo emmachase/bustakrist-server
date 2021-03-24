@@ -11,6 +11,7 @@ import { BalStream, KristService } from "./KristService";
 import { GameService } from "./GameService";
 import { kstF2 } from "../util/chalkFormatters";
 import { ExecutedGame } from "../entity/ExecutedGame";
+import { redis } from "../connect/redis";
 
 interface ChatEvent {
     from: string // Username
@@ -32,6 +33,19 @@ export class ChatService extends Subject<ChatEvent> {
 
     private constructor() {
         super();
+
+        this.fetchHistory();
+    }
+    
+    async fetchHistory() {
+        const history = await redis.lrange("chat::", -this.maxHistoryLength, -1)
+        this.globalHistory = history.map(x => JSON.parse(x)).reverse()
+    }
+
+    async getDMHistory(from: string, to: string) {
+        const pkey = `chat:${[from, to].sort().join(':')}`;
+        const history = await redis.lrange(pkey, -this.maxHistoryLength, -1)
+        return history.map(x => JSON.parse(x)).reverse()
     }
 
     previousIds: string[] = [];
@@ -61,9 +75,13 @@ export class ChatService extends Subject<ChatEvent> {
             private: privateMsg || undefined
         };
 
-        if (!privateMsg) {
+        if (privateMsg) {
+            const pkey = `chat:${[msg.from, msg.to].sort().join(':')}`;
+            redis.rpush(pkey, JSON.stringify(event));
+        } else {
             this.globalHistory.push(event);
             this.globalHistory = this.globalHistory.slice(-this.maxHistoryLength);
+            redis.rpush("chat::", JSON.stringify(event));
         }
 
         this.next(event);
