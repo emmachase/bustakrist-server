@@ -251,8 +251,6 @@ export class KristService {
     }
 
     private async onClose() {
-        GameService.instance.requestPause();
-
         while (true) {
             try {
                 logger.error("Lost connection to Krist, reconnecting in " + getConfig().krist.connectionBounce + " seconds");
