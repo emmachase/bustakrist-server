@@ -39,13 +39,13 @@ export class ChatService extends Subject<ChatEvent> {
     
     async fetchHistory() {
         const history = await redis.lrange("chat::", -this.maxHistoryLength, -1)
-        this.globalHistory = history.map(x => JSON.parse(x)).reverse()
+        this.globalHistory = history.map(x => JSON.parse(x))
     }
 
     async getDMHistory(from: string, to: string) {
         const pkey = `chat:${[from, to].sort().join(':')}`;
         const history = await redis.lrange(pkey, -this.maxHistoryLength, -1)
-        return history.map(x => JSON.parse(x)).reverse()
+        return history.map(x => JSON.parse(x))
     }
 
     previousIds: string[] = [];
