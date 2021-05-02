@@ -10,6 +10,7 @@ dependencies:
   ioredis: 4.24.2
   luxon: 1.26.0
   moment: 2.29.1
+  prom-client: 13.1.0
   reflect-metadata: 0.1.13
   rxjs: 6.6.3
   sqlite3: 4.2.0
@@ -483,6 +484,10 @@ packages:
     dev: false
     resolution:
       integrity: sha512-AKpaYlHn8t4SVbOHCy+b5+KKgvR4vrsD8vbvrbiQJps7fKDTkjkDry6ji0rUJjC0kzbNePLwzxq8iypo41qeWA==
+  /bintrees/1.0.1:
+    dev: false
+    resolution:
+      integrity: sha1-DmVcm5wkNeqraL9AJyJtK1WjRSQ=
   /body-parser/1.19.0:
     dependencies:
       bytes: 3.1.0
@@ -1836,6 +1841,14 @@ packages:
       node: '>=0.4.0'
     resolution:
       integrity: sha512-7PiHtLll5LdnKIMw100I+8xJXR5gW2QwWYkT6iJva0bXitZKa/XMrSbdmg3r2Xnaidz9Qumd0VPaMrZlF9V9sA==
+  /prom-client/13.1.0:
+    dependencies:
+      tdigest: 0.1.1
+    dev: false
+    engines:
+      node: '>=10'
+    resolution:
+      integrity: sha512-jT9VccZCWrJWXdyEtQddCDszYsiuWj5T0ekrPszi/WEegj3IZy6Mm09iOOVM86A4IKMWq8hZkT2dD9MaSe+sng==
   /proxy-addr/2.0.6:
     dependencies:
       forwarded: 0.1.2
@@ -2250,6 +2263,12 @@ packages:
       node: '>=4.5'
     resolution:
       integrity: sha512-w2VwSrBoHa5BsSyH+KxEqeQBAllHhccyMFVHtGtdMpF4W7IRWfZjFiQceJPChOeTsSDVUpER2T8FA93pr0L+QA==
+  /tdigest/0.1.1:
+    dependencies:
+      bintrees: 1.0.1
+    dev: false
+    resolution:
+      integrity: sha1-Ljyyw56kSeVdHmzZEReszKRYgCE=
   /text-hex/1.0.0:
     dev: false
     resolution:
@@ -2598,6 +2617,7 @@ specifiers:
   ioredis: ^4.24.2
   luxon: ^1.26.0
   moment: ^2.29.1
+  prom-client: ^13.1.0
   reflect-metadata: ^0.1.10
   rxjs: ^6.6.3
   sqlite3: ^4.0.3

@@ -9,7 +9,7 @@ import chalk from "chalk";
 import { getConnection } from "typeorm";
 import { User } from "../entity/User";
 import { kst } from "../util/chalkFormatters";
-import { GameService } from "./GameService";
+import { metrics, metrics_prefix } from "../connect/prometheus";
 
 type CommonMeta = {
     metaname?: string
@@ -57,6 +57,28 @@ export const TipStream = new Subject<{
 export const BalStream = new Subject<{
     user: string
 }>();
+
+new metrics.Gauge({
+    name: metrics_prefix + "wallet_krist",
+    help: "Amount of Krist contained in the wallet",
+    labelNames: ["division"],
+    async collect() {
+        this.set(
+            { division: "all" }, 
+            await KristService.instance.getBalance()
+        );
+
+        this.set(
+            { division: "allocated" }, 
+            await KristService.instance.getAllocatedBalance() / 100
+        );
+
+        this.set(
+            { division: "unallocated" }, 
+            await KristService.instance.getUnallocatedBalance() / 100
+        );
+    }
+});
 
 export class KristService {
     private static _instance: KristService;

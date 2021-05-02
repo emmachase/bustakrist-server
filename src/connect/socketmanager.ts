@@ -10,6 +10,7 @@ import { logger } from "../logger";
 import chalk from "chalk";
 import { Request } from "express";
 import { Subject } from "rxjs";
+import { metrics, metrics_prefix } from "./prometheus";
 
 // This import registers all the request handlers
 import "./requests";
@@ -17,6 +18,23 @@ import "./requests";
 
 const connections: SocketUser[] = [];
 export const ConnectionStream = new Subject();
+
+// Metrics
+new metrics.Gauge({
+    name: metrics_prefix + "connections_total",
+    help: "Total number of active websocket connections.",
+    labelNames: ["division"],
+    collect() {
+        this.set({
+            division: "all"
+        }, connections.length)
+
+        this.set({
+            division: "authenticated"
+        }, connections.filter(c => c.getAuthedUser()).length)
+    }
+})
+
 
 export function isAnyoneHere(): boolean {
     return !!connections.length;

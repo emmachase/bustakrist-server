@@ -5,6 +5,7 @@ export interface AppConfig {
     system: {
         name: string
         listenPort: number
+        metricsPort: number
         logLevel?: string
         chainFile: string
     }

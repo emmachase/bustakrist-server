@@ -16,6 +16,7 @@ import { calcStats, initializeChain } from "./util/database";
 import { KristService } from "./services/KristService";
 import { SECOND, sleepFor } from "./util/time";
 import { kst, kstF2 } from "./util/chalkFormatters";
+import { initMetrics } from "./connect/prometheus";
 
 logger.debug("App initializing...");
 
@@ -81,6 +82,7 @@ createConnection().then(async connection => {
 
     initExpress();
     initSockets();
+    initMetrics();
 
     GameService.instance.tryBootstrapService();
 

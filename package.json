@@ -37,6 +37,7 @@
       "ioredis": "^4.24.2",
       "luxon": "^1.26.0",
       "moment": "^2.29.1",
+      "prom-client": "^13.1.0",
       "reflect-metadata": "^0.1.10",
       "rxjs": "^6.6.3",
       "sqlite3": "^4.0.3",

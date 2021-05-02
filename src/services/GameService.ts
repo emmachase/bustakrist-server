@@ -15,6 +15,7 @@ import { HistoricalBet } from "../entity/HistoricalBet";
 import { AsyncPool } from "../util/AsyncPool";
 import { Mutex } from "async-mutex";
 import { redis } from "../connect/redis";
+import { metrics, metrics_prefix } from "../connect/prometheus";
 
 export enum GameEvent {
     ANNOUNCE_START,
@@ -36,6 +37,11 @@ export type Wager = {
 export enum InState {
 
 }
+
+const gamesPlayedMetric = new metrics.Counter({
+    name: metrics_prefix + "games_played_total",
+    help: "Total number of games played.",
+});
 
 export class GameService {
     private static _instance: GameService;
@@ -128,6 +134,9 @@ export class GameService {
             fetchNextGameID().then(gid => {
                 this.nextGameID = gid;
                 this.hasInitialized = true;
+
+                gamesPlayedMetric.reset();
+                gamesPlayedMetric.inc(gid - 1);
 
                 this.tryBootstrapService();
             });
@@ -384,6 +393,8 @@ export class GameService {
         logger.info(chalk`Round ended at {bold ${(bustAt/100).toFixed(2)}X} with {cyan ${totalWagered
             }KST} wagered, and {yellow ${totalProfit/100
             }KST} profited ({magenta ${(totalWagered*100 - totalProfit)/100}KST} server profit).`);
+
+        gamesPlayedMetric.inc();
 
         // Give a few seconds for the multiplier to stay on screen
         const roundDelay = getConfig().game.roundDelay;
