@@ -9,7 +9,7 @@ chainFile = "chain.txt"
 node = "krist.ceriat.net"
 connectionBounce = 30
 
-pkey = "***REMOVED***"
+pkey = "<<REDACTED>>"
 address = "kitsemmaya"
 names = ["bust", "bustakrist", "bak"]
 
