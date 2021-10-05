@@ -322,7 +322,7 @@ export class KristService {
 	}
 
     public getSafeReturn(rawFrom: string, meta: CommonMeta) {
-        const ideal = meta.return ?? rawFrom;
+        const ideal = (meta.return ?? rawFrom).toLowerCase();
 
         if (ideal.endsWith(".kst")) {
             const name = ideal.match(/(.*)\.kst/);
