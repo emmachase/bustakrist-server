@@ -364,7 +364,7 @@ export class KristService {
                 to: this.getSafeReturn(to, {}),
                 amount: amount,
                 metadata: this.encodeCommonMeta({
-                    return: `${username}@${getConfig().krist.names[0]}.kst`,
+                    return: `${username}@${getConfig().krist.names[0]}.kst`.toLowerCase(),
                     message: "Thank you for using BustAKrist!"
                 })
             })
