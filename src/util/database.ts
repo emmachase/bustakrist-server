@@ -43,7 +43,7 @@ export async function initializeChain(name: string, connection: Connection) {
                 
                 batch = [];
     
-                bar1.update(i/batchSize);
+                bar1.update(i);
             }
         }
     

@@ -1,3 +1,5 @@
+import { loggedSetTimeout } from "./timeout";
+
 export class AsyncPool {
     private handlers: Map<number, {
         timeout: NodeJS.Timeout
@@ -20,7 +22,7 @@ export class AsyncPool {
         }
 
         this.handlers.set(key, {
-            timeout: setTimeout(func, timeout),
+            timeout: loggedSetTimeout(func, timeout, { key }),
             fired: false, func
         });
     }

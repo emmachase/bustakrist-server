@@ -366,7 +366,10 @@ export class GameService {
         }
 
         // Sleep until the game has busted
-        await sleepFor(bustAtTime - +new Date());
+        await sleepFor(bustAtTime - +new Date(), { 
+            bustAtTime, totalWagered, gameHash, bustAt,
+            activeWagers: this.activeWagers
+         });
 
         this.cashoutPool.clear();
 

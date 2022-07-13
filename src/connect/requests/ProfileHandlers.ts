@@ -4,7 +4,6 @@ import { getConfig } from "../../config";
 import { HistoricalBet } from "../../entity/HistoricalBet";
 import { User } from "../../entity/User";
 import { GameService } from "../../services/GameService";
-import { sleepFor } from "../../util/time";
 import { RequestHandler, RequestMessage, SocketUser } from "../socketUser";
 import { ErrorCode, ErrorDetail, RequestCode } from "../transportCodes";
 
@@ -60,7 +59,7 @@ export class ProfileHandlers extends SocketUser {
         page: number
     }>) {
         const errors = ProfileHandlers.ProfileBetsSchema.validate(req.data ?? {});
-        if (errors.length) return req.replyFail(ErrorCode.MALFORMED, errors.map(e => e.message).join(" "));
+        if (errors.length) return req.replyFail(ErrorCode.MALFORMED, errors.map(e => e.path).join(" "));
         
         const data = req.data!;
 

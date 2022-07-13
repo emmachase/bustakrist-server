@@ -41,7 +41,7 @@ export function getRoundLength(bust: number): number {
  * @param time The time since the round started in milliseconds
  */
 export function getScoreAt(time: number): number {
-  return Math.floor(100 * 2**((time/1000)/10));
+  return Math.floor(100 * 2**((time/SECOND)/10));
 }
 
 async function getSafety(wagered: number, profited: number, maxPercent: number) {

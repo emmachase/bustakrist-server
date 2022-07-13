@@ -4,6 +4,8 @@ listenPort = 8457
 metricsPort = 8458
 logLevel = "info"
 chainFile = "chain.txt"
+webhook = "<<REDACTED>>"
+exceptionsWebhook = "<<REDACTED>>"
 
 [krist]
 node = "krist.ceriat.net"

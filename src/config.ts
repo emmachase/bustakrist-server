@@ -7,6 +7,8 @@ export interface AppConfig {
         listenPort: number
         metricsPort: number
         logLevel?: string
+        webhook?: string
+        exceptionsWebhook?: string
         chainFile: string
     }
 
