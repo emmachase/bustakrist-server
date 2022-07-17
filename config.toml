@@ -8,7 +8,7 @@ webhook = "<<REDACTED>>"
 exceptionsWebhook = "<<REDACTED>>"
 
 [krist]
-node = "krist.ceriat.net"
+node = "krist.dev"
 connectionBounce = 30
 
 pkey = "<<REDACTED>>"
