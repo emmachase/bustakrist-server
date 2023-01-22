@@ -6,6 +6,7 @@ import readline from "readline";
 import cliProgress from "cli-progress";
 import { getConfig } from "../config";
 import { calculateGameResult } from "../services/ScoreService";
+import { queueTransaction } from "./TransactionQueue";
 
 const batchSize = 400;
 export async function initializeChain(name: string, connection: Connection) {
@@ -18,7 +19,7 @@ export async function initializeChain(name: string, connection: Connection) {
   
     // const hashes = fs.readFileSync(name).toString().split("\n").reverse();
 
-    await getConnection().transaction(async transactionalEntityManager => {
+    await queueTransaction(() => getConnection().transaction(async transactionalEntityManager => {
         let i = 0;
         let batch: string[] = [];
         const exec = () => transactionalEntityManager
@@ -52,7 +53,7 @@ export async function initializeChain(name: string, connection: Connection) {
         if (batch.length > 0) {
             await exec();
         }    
-    });    
+    }));    
 
     // Initialize the genesis game
     const genesis = new ExecutedGame();

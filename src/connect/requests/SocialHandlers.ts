@@ -6,6 +6,7 @@ import { logger } from "../../logger";
 import { ChatService } from "../../services/ChatService";
 import { TipStream } from "../../services/KristService";
 import { kst, kstF2 } from "../../util/chalkFormatters";
+import { queueTransaction } from "../../util/TransactionQueue";
 import { safeSend } from "../socketmanager";
 import { RequestHandler, RequestMessage, SocketUser } from "../socketUser";
 import { RequestCode, ErrorCode, ErrorDetail, UpdateCode } from "../transportCodes";
@@ -129,13 +130,13 @@ export class SocialHandlers extends SocketUser {
             return req.replyFail(ErrorCode.UNFULFILLABLE, ErrorDetail.NOT_EXISTS);
         }
 
-        await getConnection().transaction(async manager => {
+        await queueTransaction(() => getConnection().transaction(async manager => {
             await manager.decrement(User, { id: this.authedUser!.id }, "balance", data.amount!);
             await manager.increment(User, { id: targetUser.id }, "balance", data.amount!);
 
             await manager.increment(User, { id: this.authedUser!.id }, "totalOut", data.amount!);
             await manager.increment(User, { id: targetUser.id }, "totalIn", data.amount!);
-        });
+        }));
 
         logger.info(chalk`User {cyan ${this.authedUser.name}} tipped ${kstF2(data.amount!)} to {magenta ${targetUser.name}}`);
 

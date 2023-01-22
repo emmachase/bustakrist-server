@@ -12,6 +12,7 @@ import { GameService } from "./GameService";
 import { kstF2 } from "../util/chalkFormatters";
 import { ExecutedGame } from "../entity/ExecutedGame";
 import { redis } from "../connect/redis";
+import { queueTransaction } from "../util/TransactionQueue";
 
 interface ChatEvent {
     from: string // Username
@@ -273,7 +274,7 @@ export class ChatService extends Subject<ChatEvent> {
 
                 if (user) {
                     const amount = Math.floor(+parts[1]*100) || 0;
-                    await getConnection().manager.transaction(async manager => {
+                    await queueTransaction(() => getConnection().manager.transaction(async manager => {
                         await manager.increment(User, { id: user.id }, "balance", amount);
 
                         if (amount > 0) {
@@ -281,7 +282,7 @@ export class ChatService extends Subject<ChatEvent> {
                         } else {
                             await manager.increment(User, { id: user.id }, "totalOut", amount);
                         }
-                    })
+                    }));
                     BalStream.next({ user: user.name });
                     
                     this.sendMessage({

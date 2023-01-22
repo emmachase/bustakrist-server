@@ -10,6 +10,7 @@ import { getConnection } from "typeorm";
 import { User } from "../entity/User";
 import { kst } from "../util/chalkFormatters";
 import { metrics, metrics_prefix } from "../connect/prometheus";
+import { queueTransaction } from "../util/TransactionQueue";
 
 type CommonMeta = {
     metaname?: string
@@ -216,10 +217,10 @@ export class KristService {
             return void await this.makeRefund(trans, "The user '" + trans.sent_metaname + "' does not exist");
         }
 
-        await getConnection().manager.transaction(async manager => {
+        await queueTransaction(() => getConnection().manager.transaction(async manager => {
             await manager.increment(User, { id: user.id }, "balance", 100*trans.value);
             await manager.increment(User, { id: user.id }, "totalIn", 100*trans.value);
-        })
+        }))
         BalStream.next({ user: user.name })
 
         const safeFrom = this.getSafeReturn(trans.from, this.parseCommonMeta(trans.metadata));

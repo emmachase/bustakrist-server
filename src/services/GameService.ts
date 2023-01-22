@@ -16,6 +16,7 @@ import { AsyncPool } from "../util/AsyncPool";
 import { Mutex } from "async-mutex";
 import { redis } from "../connect/redis";
 import { metrics, metrics_prefix } from "../connect/prometheus";
+import { queueTransaction } from "../util/TransactionQueue";
 
 export enum GameEvent {
     ANNOUNCE_START,
@@ -490,11 +491,11 @@ export class GameService {
                 const wagers = this.pendingWagers;
                 this.pendingWagers = [];
 
-                await getConnection().transaction(async manager => {
+                await queueTransaction(() => getConnection().transaction(async manager => {
                     for (const wager of wagers) {
                         await this.drainWager(manager, wager);
                     }
-                });
+                }));
 
                 // In case there was a race where someone got in before the transaction finished
                 this.activeWagers = this.activeWagers.concat(wagers);
@@ -567,7 +568,7 @@ export class GameService {
             const wagers = this.activeWagers;
             this.activeWagers = [];
 
-            await getConnection().transaction(async manager => {
+            await queueTransaction(() => getConnection().transaction(async manager => {
                 for (const wager of wagers) {
                     const profit = this.scoreWager(bust, wager);
                     if (profit > 0) {
@@ -579,7 +580,7 @@ export class GameService {
 
                     totalProfit += profit;
                 }
-            });
+            }));
 
             for (const wager of wagers) {
                 if (!wager.exited) {
