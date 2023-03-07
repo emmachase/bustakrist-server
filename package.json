@@ -41,7 +41,7 @@
       "prom-client": "^13.1.0",
       "reflect-metadata": "^0.1.10",
       "rxjs": "^6.6.3",
-      "sqlite3": "^4.0.3",
+      "sqlite3": "^5.1.4",
       "superagent": "^8.0.0",
       "toml": "^3.0.0",
       "ts-node": "^9.1.1",

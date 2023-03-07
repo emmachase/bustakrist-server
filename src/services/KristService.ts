@@ -97,6 +97,8 @@ export class KristService {
       return this.idCounter = (this.idCounter + 1) | 0;
     }
 
+    private lastSeenTxId = -1;
+
     private walletTotalBalance = new DelayedProp<number>();
 
     // Amount of Krist held in user accounts (Fixed 2)
@@ -181,6 +183,8 @@ export class KristService {
     }
 
     private async processTransaction(trans: KristTransaction): Promise<void> {
+        this.lastSeenTxId = Math.max(this.lastSeenTxId, trans.id);
+
         const myAddress = getConfig().krist.address;
         if (trans.from === myAddress && trans.to !== myAddress) {
             this.walletTotalBalance.setValue(
@@ -274,14 +278,19 @@ export class KristService {
     }
 
     private async onClose() {
+        let delay = getConfig().krist.connectionBounce * SECOND;
+
         while (true) {
             try {
-                logger.error("Lost connection to Krist, reconnecting in " + getConfig().krist.connectionBounce + " seconds");
-                await sleepFor(getConfig().krist.connectionBounce * SECOND);
+                logger.error("Lost connection to Krist, reconnecting in " + delay / SECOND + " seconds");
+                await sleepFor(delay);
 
                 await this.tryConnect();
                 break;
-            } catch {}
+            } catch (e) {
+                logger.error("Connection failed: " + e);
+                delay *= 2;
+            }
         }
     }
 
@@ -355,7 +364,7 @@ export class KristService {
                 })
             })
         } catch (e) {
-            logger.error(chalk`{bold Error making refund}: ${e.toString()}`)
+            logger.error(chalk`{bold Error making refund}: ${e}`)
         }
     }
 
@@ -370,7 +379,7 @@ export class KristService {
                 })
             })
         } catch (e) {
-            logger.error(chalk`{bold Error making refund}: ${e.toString()}`)
+            logger.error(chalk`{bold Error making refund}: ${e}`)
         }
     }
 }
