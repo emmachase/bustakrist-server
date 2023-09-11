@@ -66,7 +66,9 @@ export function pruneSockets() {
         }
     }
     
-    logger.info(chalk`Pruned {cyan ${pruned}} ws connections, {cyan ${connections.length}} remain.`)
+    if (pruned > 0) {
+        logger.info(chalk`Pruned {cyan ${pruned}} ws connections, {cyan ${connections.length}} remain.`)
+    }
 }
 
 setInterval(pruneSockets, 10*MINUTE);
