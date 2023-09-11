@@ -39,7 +39,4 @@ export class User {
     @Column({default: false})
     banned: boolean;
 
-    @Column({nullable: true})
-    banReason?: string;
-
 }
