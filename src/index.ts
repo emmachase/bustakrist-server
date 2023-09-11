@@ -62,8 +62,8 @@ createConnection().then(async connection => {
     // connection.manager.save(emma);
     // connection.manager.save(threedeesix);
 
+    let retryDelay = getConfig().krist.connectionBounce;
     while (true) {
-        let retryDelay = getConfig().krist.connectionBounce;
         try {
             await KristService.instance.tryConnect();
             break;
