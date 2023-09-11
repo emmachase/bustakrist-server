@@ -63,12 +63,15 @@ createConnection().then(async connection => {
     // connection.manager.save(threedeesix);
 
     while (true) {
+        let retryDelay = getConfig().krist.connectionBounce;
         try {
             await KristService.instance.tryConnect();
             break;
         } catch (e) {
-            logger.error("Unable to connect to Krist, trying again in " + getConfig().krist.connectionBounce + " seconds");
-            await sleepFor(getConfig().krist.connectionBounce * SECOND);
+            logger.error("Unable to connect to Krist, trying again in " + retryDelay + " seconds");
+            await sleepFor(retryDelay * SECOND);
+            retryDelay *= 2;
+            if (retryDelay > 30) retryDelay = 30;
         }
     }
 
