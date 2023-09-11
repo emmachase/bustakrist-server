@@ -290,6 +290,7 @@ export class KristService {
             } catch (e) {
                 logger.error("Connection failed: " + e);
                 delay *= 2;
+		if (delay > 30 * SECOND) delay = 30 * SECOND;
             }
         }
     }
