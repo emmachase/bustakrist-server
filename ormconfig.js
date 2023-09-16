@@ -4,7 +4,7 @@ const prefix = process.env.NODE_ENV === "production" ? "build" : "src";
 
 module.exports = {
    "type": "sqlite",
-   "database": "database.sqlite",
+   "database": "/data/database.sqlite",
    "synchronize": false,
    "logging": false,
    entities: [join(__dirname, prefix, "**", "entity", "*.{ts,js}")],

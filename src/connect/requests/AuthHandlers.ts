@@ -35,7 +35,7 @@ export class AuthHandlers extends SocketUser {
         pass: string
     }>) {
         const errors = AuthHandlers.AuthSchema.validate(req.data ?? {});
-        if (errors.length) return req.replyFail(ErrorCode.MALFORMED, errors.map(e => e.message).join(" "));
+        if (errors.length) return req.replyFail(ErrorCode.MALFORMED, errors.map(e => e.path).join(" "));
 
         const data = req.data!;
 
@@ -84,7 +84,7 @@ export class AuthHandlers extends SocketUser {
         pass: string
     }>) {
         const errors = AuthHandlers.AuthSchema.validate(req.data ?? {});
-        if (errors.length) return req.replyFail(ErrorCode.MALFORMED, errors.map(e => e.message).join(" "));
+        if (errors.length) return req.replyFail(ErrorCode.MALFORMED, errors.map(e => e.path).join(" "));
 
         const data = req.data!;
         const trueUser = await getConnection().manager.findOne(User, {

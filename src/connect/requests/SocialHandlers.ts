@@ -30,7 +30,7 @@ export class SocialHandlers extends SocketUser {
         to: string
     }>) {
         const errors = SocialHandlers.MessageSchema.validate(req.data ?? {});
-        if (errors.length) return req.replyFail(ErrorCode.MALFORMED, errors.map(e => e.message).join(" "));
+        if (errors.length) return req.replyFail(ErrorCode.MALFORMED, errors.map(e => e.path).join(" "));
 
         if (!this.authedUser) {
             return req.replyFail(ErrorCode.UNAUTHORIZED, ErrorDetail.NOT_LOGGED_IN);
@@ -62,7 +62,7 @@ export class SocialHandlers extends SocketUser {
         action: boolean
     }>) {
         const errors = SocialHandlers.FriendSchema.validate(req.data ?? {});
-        if (errors.length) return req.replyFail(ErrorCode.MALFORMED, errors.map(e => e.message).join(" "));
+        if (errors.length) return req.replyFail(ErrorCode.MALFORMED, errors.map(e => e.path).join(" "));
 
         if (!this.authedUser) {
             return req.replyFail(ErrorCode.UNAUTHORIZED, ErrorDetail.NOT_LOGGED_IN);
@@ -112,7 +112,7 @@ export class SocialHandlers extends SocketUser {
         to: string
     }>) {
         const errors = SocialHandlers.TipSchema.validate(req.data ?? {});
-        if (errors.length) return req.replyFail(ErrorCode.MALFORMED, errors.map(e => e.message).join(" "));
+        if (errors.length) return req.replyFail(ErrorCode.MALFORMED, errors.map(e => e.path).join(" "));
 
         if (!this.authedUser) {
             return req.replyFail(ErrorCode.UNAUTHORIZED, ErrorDetail.NOT_LOGGED_IN);

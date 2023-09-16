@@ -1,0 +1,17 @@
+# Docker-related #
+##################
+Dockerfile
+.dockerignore
+
+# VCS folders #
+###############
+.git
+.svn
+.hg
+.github
+
+# Misc #
+########
+devchain.txt
+config.toml
+

@@ -40,7 +40,7 @@ export class GameHandlers extends SocketUser {
         cashout: number,
     }>) {
         const errors = GameHandlers.CommitSchema.validate(req.data ?? {});
-        if (errors.length) return req.replyFail(ErrorCode.MALFORMED, errors.map(e => e.message).join(" "));
+        if (errors.length) return req.replyFail(ErrorCode.MALFORMED, errors.map(e => e.path).join(" "));
 
         if (!this.authedUser) {
             return req.replyFail(ErrorCode.UNAUTHORIZED, ErrorDetail.NOT_LOGGED_IN);
