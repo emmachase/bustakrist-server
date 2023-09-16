@@ -1,3 +1,8 @@
 import Redis from "ioredis";
+import { getConfig } from "../config";
 
-export const redis = new Redis(6969);
+const config = getConfig();
+export const redis = new Redis(
+    config.redis.port,
+    config.redis.host
+);

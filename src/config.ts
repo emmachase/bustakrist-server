@@ -21,6 +21,11 @@ export interface AppConfig {
         names: string[] // First one in the list is used as the primary name
     }
 
+    redis: {
+        host: string
+        port: number
+    }
+
     game: {
         salt: string
         roundDelay: number   // Number of seconds before starting the next round.
