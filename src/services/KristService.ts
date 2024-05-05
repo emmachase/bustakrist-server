@@ -380,7 +380,7 @@ export class KristService {
                 })
             })
         } catch (e) {
-            logger.error(chalk`{bold Error making refund}: ${e}`)
+            logger.error(chalk`{bold Error making withdrawal}: ${e}`)
         }
     }
 }

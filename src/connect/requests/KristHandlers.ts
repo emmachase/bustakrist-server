@@ -44,13 +44,17 @@ export class KristHandlers extends SocketUser {
             return req.replyFail(ErrorCode.UNFULFILLABLE, ErrorDetail.LOW_BALANCE);
         }
 
+        logger.info(`${this.authedUser.name} withdrawing ${kst(Math.floor(amount/100))} to ${data.to}`);
 
         try {
             const name = this.authedUser.name;
             await queueTransaction(() => getConnection().manager.transaction(async manager => {
                 await manager.decrement(User, { id: this.authedUser!.id }, "balance", amount);
                 await manager.increment(User, { id: this.authedUser!.id }, "totalOut", amount);
-                await KristService.instance.makeWithdrawal(name, data.to!, Math.floor(data.amount!));
+                const tx = await KristService.instance.makeWithdrawal(name, data.to!, Math.floor(data.amount!));
+                if (!tx) {
+                    throw new Error("Transaction failed");
+                }
             }));
 
             logger.info(chalk`User {cyan ${this.authedUser.name}} withdrew ${kst(Math.floor(amount/100))}`);

@@ -3,6 +3,7 @@ import Schema from "validate";
 import { GameService } from "../../services/GameService";
 import { SocketUser, RequestHandler, RequestMessage } from "../socketUser";
 import { RequestCode, ErrorCode, ErrorDetail } from "../transportCodes";
+import { logger } from "../../logger";
 
 export class GameHandlers extends SocketUser {
     @RequestHandler(RequestCode.GETBAL)
@@ -46,6 +47,8 @@ export class GameHandlers extends SocketUser {
             return req.replyFail(ErrorCode.UNAUTHORIZED, ErrorDetail.NOT_LOGGED_IN);
         }
 
+        logger.info(`${this.authedUser.name} committing wager of ${req.data!.bet} (cash out ${req.data!.cashout})`);
+
         const data = req.data!;
         data.bet = Math.floor(data.bet!);
         data.cashout = Math.floor(data.cashout!);
@@ -81,6 +84,8 @@ export class GameHandlers extends SocketUser {
         if (!await GameService.instance.isPlaying(this.authedUser)) {
             return req.replyFail(ErrorCode.UNFULFILLABLE, ErrorDetail.NOT_PLAYING);
         }
+
+        logger.info(`${this.authedUser.name} pulling wager`);
 
         const success = await GameService.instance.pullWager(this.authedUser);
         if (!success) {

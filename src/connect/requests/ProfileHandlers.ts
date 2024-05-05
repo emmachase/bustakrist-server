@@ -6,6 +6,7 @@ import { User } from "../../entity/User";
 import { GameService } from "../../services/GameService";
 import { RequestHandler, RequestMessage, SocketUser } from "../socketUser";
 import { ErrorCode, ErrorDetail, RequestCode } from "../transportCodes";
+import { logger } from "../../logger";
 
 export class ProfileHandlers extends SocketUser {
     @RequestHandler(RequestCode.PROFILE)
@@ -18,6 +19,8 @@ export class ProfileHandlers extends SocketUser {
 
         const user = await manager.findOne(User, { where: { name: req.data.user } });
         if (!user) return req.replyFail(ErrorCode.UNFULFILLABLE, ErrorDetail.NOT_EXISTS);
+
+        logger.info(`Request for ${user.name}'s profile`);
 
         const gamesPlayed = await manager.count(HistoricalBet, { where: { user } });
 
@@ -68,6 +71,8 @@ export class ProfileHandlers extends SocketUser {
         const page = data.page ?? 0;
         const user = await manager.findOne(User, { where: { name: data.user } });
         if (!user) return req.replyFail(ErrorCode.UNFULFILLABLE, ErrorDetail.NOT_EXISTS);
+
+        logger.info(`Request for ${user.name}'s profile bets (page ${page})`);
 
         const pageSize = getConfig().profile.pageSize;
         const [entities, count] = await manager.findAndCount(HistoricalBet, {
