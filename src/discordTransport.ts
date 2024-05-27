@@ -118,6 +118,13 @@ export default class DiscordTransport extends Transport {
                 setTimeout(() => {
                     this.sendToDiscord(info, true);
                 }, tryAgain);
+            } else {
+                // Might be a token error, try to re-initialize
+                console.error(err);
+                this.initialize();
+                setTimeout(() => {
+                    this.sendToDiscord(info, true);
+                }, 1000);
             }
         }
     }
