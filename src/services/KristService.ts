@@ -3,7 +3,7 @@ import axios from "axios";
 import WebSocket, { MessageEvent } from "ws";
 import { getConfig } from "../config";
 import { logger } from "../logger";
-import { SECOND, sleepFor } from "../util/time";
+import { DAY, SECOND, sleepFor } from "../util/time";
 import { DelayedProp } from "../util/DelayedProp";
 import chalk from "chalk";
 import { getConnection } from "typeorm";
@@ -139,6 +139,12 @@ export class KristService {
 
     private handleMessage(message: MessageEvent) {
         const dataStr = message.data.toString("ascii");
+        
+        if (message.target !== this.ws) {
+            logger.warn(`Received message from unknown socket: ${dataStr}`);
+            return;
+        }
+        
         let data: Record<string, unknown>;
         try {
             const obj = JSON.parse(dataStr);
@@ -260,6 +266,7 @@ export class KristService {
         });
     }
 
+    connectionRestartTimer: NodeJS.Timeout | undefined = undefined;
     private async onOpen() {
         await Promise.all([
             this.makeRequest("unsubscribe", { event: "blocks" }),
@@ -275,6 +282,12 @@ export class KristService {
         }
 
         this.walletTotalBalance.setValue(me.address.balance);
+
+        clearTimeout(this.connectionRestartTimer);
+        this.connectionRestartTimer = setTimeout(() => {
+            logger.info("Restarting Krist connection");
+            this.tryConnect();
+        }, 1*DAY);
     }
 
     private async onClose() {

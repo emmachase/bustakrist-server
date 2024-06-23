@@ -14,16 +14,16 @@ const logger_i = winston.createLogger({
     winston.format.printf(info => chalk`{gray ${info.timestamp}} ${info.level}: ${info.message}`+(info.splat!==undefined?`${info.splat}`:" "))
   ),
   transports: [
-    new winston.transports.File({filename: "error.log", level: "error"}),
-    new winston.transports.File({filename: "combined.log"}),
+    // new winston.transports.File({filename: "error.log", level: "error"}),
+    // new winston.transports.File({filename: "combined.log"}),
     new winston.transports.Console({
       level: "debug",
       handleExceptions: true
     })
   ],
   exceptionHandlers: [
-    new winston.transports.File({ filename: "exceptions.log" }),
-    new winston.transports.File({ filename: "combined.log" })
+    // new winston.transports.File({ filename: "exceptions.log" }),
+    // new winston.transports.File({ filename: "combined.log" })
   ]
 });
 
@@ -47,13 +47,6 @@ if (config.system.exceptionsWebhook !== undefined) {
       info.message = "<@333530784495304705> " + info.message.replace(ansiRegex, '');
       DiscordTransport.prototype.log.call(this, info, next);
     }
-  }));
-}
-
-if (process.env.NODE_ENV !== "production") {
-  logger_i.add(new winston.transports.Console({
-    level: "debug",
-    handleExceptions: true
   }));
 }
 
