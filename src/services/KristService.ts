@@ -151,6 +151,8 @@ export class KristService {
         
         if (message.target !== this.ws) {
             logger.warn(`Received message from unknown socket: ${dataStr}`);
+            message.target.close();
+
             return;
         }
         
