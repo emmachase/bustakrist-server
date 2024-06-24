@@ -131,6 +131,15 @@ export class KristService {
             throw new Error("Could not connect to Krist");
         }
 
+        if (this.ws !== undefined) {
+            try {
+                this.ws.onclose = () => {};
+                this.ws.close();
+            } catch (e) {
+                logger.error(chalk`{bold Error closing old Krist connection}: ${e}`);
+            }
+        }
+
         this.ws = new WebSocket(wsURL.url);
         this.ws.onopen = this.onOpen.bind(this);
         this.ws.onclose = this.onClose.bind(this);
