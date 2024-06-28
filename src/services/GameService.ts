@@ -39,6 +39,8 @@ export enum InState {
 
 }
 
+export const gameMutex = new Mutex();
+
 const gamesPlayedMetric = new metrics.Counter({
     name: metrics_prefix + "games_played_total",
     help: "Total number of games played.",
@@ -119,11 +121,9 @@ export class GameService {
 
     // Wagers yet to be locked in for the next round
     private pendingWagers: Wager[] = [];
-    private pendingWagersMutex = new Mutex();
 
     // Wagers locked in this round
     private activeWagers: Wager[] = [];
-    private activeWagersMutex = new Mutex();
 
     private connectionSubscription = ConnectionStream.subscribe(() => {
         if (this.hasInitialized) {
@@ -180,42 +180,23 @@ export class GameService {
         }
     }
 
-    public async isPlaying(user: User): Promise<boolean | "pending" | "active"> {
-        let ret;
+    public isPlaying(user: User): boolean | "pending" | "active" {
+        const pending = !!this.pendingWagers.find(w => w.player.id === user.id);
+        if (pending) return "pending";
 
-        await this.pendingWagersMutex.runExclusive(() => {
-            const pending = !!this.pendingWagers.find(w => w.player.id === user.id);
-            if (pending) ret = "pending";
-        });
-
-        if (ret) return ret;
-
-        await this.activeWagersMutex.runExclusive(() => {
-            const active =  !!this.activeWagers.find(w => w.player.id === user.id);
-            if (active) ret = "active";
-        });
-
-        if (ret) return ret;
+        const active =  !!this.activeWagers.find(w => w.player.id === user.id);
+        if (active) return "active";
 
         return false;
     }
 
-    public async canJoinGame(user: User): Promise<boolean> {
+    public canJoinGame(user: User): boolean {
         const timeDiff = DateTime.now().minus(this.currentStartDate).toMillis();
 
-        let ret: boolean = false;
         if (timeDiff < getConfig().game.roundPadding) {
-            await this.activeWagersMutex.runExclusive(() => 
-                ret = !!this.activeWagers.find(w => w.player.id === user.id)
-            );
-
-            return ret;
+            return !!this.activeWagers.find(w => w.player.id === user.id)
         } else {
-            await this.pendingWagersMutex.runExclusive(() => 
-                ret = !!this.pendingWagers.find(w => w.player.id === user.id)
-            );
-
-            return ret;
+            return !!this.pendingWagers.find(w => w.player.id === user.id)
         }
     }
 
@@ -227,7 +208,7 @@ export class GameService {
         };
 
         if (timeDiff < getConfig().game.roundPadding) {
-            await this.activeWagersMutex.runExclusive(async () => {
+            await gameMutex.runExclusive(async () => {
                 // Let them in to the active game
                 await this.drainWager(getConnection().manager, wager);
                 this.activeWagers.push(wager);
@@ -241,7 +222,7 @@ export class GameService {
                 });
             });
         } else {
-            await this.pendingWagersMutex.runExclusive(async () => {
+            await gameMutex.runExclusive(async () => {
                 // Queue them for the next game
                 this.pendingWagers.push(wager);
 
@@ -257,7 +238,7 @@ export class GameService {
         let ret;
 
         if (enforceMultiplier === undefined) {
-            await this.pendingWagersMutex.runExclusive(() => {
+            await gameMutex.runExclusive(() => {
                 const pendingIdx = this.pendingWagers.findIndex(wager => wager.player.id === user.id);
                 if (pendingIdx !== -1) {
                     this.pendingWagers.splice(pendingIdx, 1);
@@ -273,7 +254,7 @@ export class GameService {
 
         if (ret) return ret;
 
-        await this.activeWagersMutex.runExclusive(() => {
+        await gameMutex.runExclusive(() => {
             const active = this.activeWagers.find(wager => wager.player.id === user.id);
             if (active) {
                 if (active.exited) {
@@ -370,7 +351,7 @@ export class GameService {
         await sleepFor(bustAtTime - +new Date(), { 
             bustAtTime, totalWagered, gameHash, bustAt,
             activeWagers: this.activeWagers
-         });
+        });
 
         this.cashoutPool.clear();
 
@@ -486,20 +467,18 @@ export class GameService {
     }
 
     private async drainPendingWagers() {
-        await this.pendingWagersMutex.runExclusive(async () => {
-            await this.activeWagersMutex.runExclusive(async () => {
-                const wagers = this.pendingWagers;
-                this.pendingWagers = [];
+        await gameMutex.runExclusive(async () => {
+            const wagers = this.pendingWagers;
+            this.pendingWagers = [];
 
-                await queueTransaction(() => getConnection().transaction(async manager => {
-                    for (const wager of wagers) {
-                        await this.drainWager(manager, wager);
-                    }
-                }));
+            await queueTransaction(() => getConnection().transaction(async manager => {
+                for (const wager of wagers) {
+                    await this.drainWager(manager, wager);
+                }
+            }));
 
-                // In case there was a race where someone got in before the transaction finished
-                this.activeWagers = this.activeWagers.concat(wagers);
-            })
+            // In case there was a race where someone got in before the transaction finished
+            this.activeWagers = this.activeWagers.concat(wagers);
         })
     }
 
@@ -564,7 +543,7 @@ export class GameService {
     private async fulfillWagers(bust: number): Promise<number> {
         let totalProfit = 0;
 
-        await this.activeWagersMutex.runExclusive(async () => {
+        await gameMutex.runExclusive(async () => {
             const wagers = this.activeWagers;
             this.activeWagers = [];
 

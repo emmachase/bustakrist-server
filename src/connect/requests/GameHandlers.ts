@@ -1,6 +1,6 @@
 import { Mutex } from "async-mutex";
 import Schema from "validate";
-import { GameService } from "../../services/GameService";
+import { GameService, gameMutex } from "../../services/GameService";
 import { SocketUser, RequestHandler, RequestMessage } from "../socketUser";
 import { RequestCode, ErrorCode, ErrorDetail } from "../transportCodes";
 import { logger } from "../../logger";
@@ -33,8 +33,6 @@ export class GameHandlers extends SocketUser {
         }
     })
 
-    private static WagerMutex = new Mutex();
-
     @RequestHandler(RequestCode.COMMIT_WAGER)
     public async commitWager(req: RequestMessage<{
         bet: number,
@@ -60,7 +58,7 @@ export class GameHandlers extends SocketUser {
             return req.replyFail(ErrorCode.UNFULFILLABLE, ErrorDetail.LOW_BALANCE);
         }
 
-        await GameHandlers.WagerMutex.runExclusive(async () => {
+        await gameMutex.runExclusive(async () => {
             if (!this.authedUser) return req.replyFail(ErrorCode.UNAUTHORIZED, ErrorDetail.NOT_LOGGED_IN);
 
             if (await GameService.instance.canJoinGame(this.authedUser)) {
@@ -81,7 +79,7 @@ export class GameHandlers extends SocketUser {
             return req.replyFail(ErrorCode.UNAUTHORIZED, ErrorDetail.NOT_LOGGED_IN);
         }
 
-        if (!await GameService.instance.isPlaying(this.authedUser)) {
+        if (!GameService.instance.isPlaying(this.authedUser)) {
             return req.replyFail(ErrorCode.UNFULFILLABLE, ErrorDetail.NOT_PLAYING);
         }
 

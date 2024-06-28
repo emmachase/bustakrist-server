@@ -414,7 +414,7 @@ export class SocketUser {
                 ok: true,
                 type: UpdateCode.UPDATE_PLAYING,
                 data: {
-                    playing: await GameService.instance.isPlaying(this.authedUser)
+                    playing: GameService.instance.isPlaying(this.authedUser)
                 }
             })
         }
