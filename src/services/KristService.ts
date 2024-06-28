@@ -143,6 +143,7 @@ export class KristService {
         this.ws = new WebSocket(wsURL.url);
         this.ws.onopen = this.onOpen.bind(this);
         this.ws.onclose = this.onClose.bind(this);
+        this.ws.onerror = this.onClose.bind(this);
         this.ws.onmessage = this.handleMessage.bind(this);
     }
 
