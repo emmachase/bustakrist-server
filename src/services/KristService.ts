@@ -11,6 +11,8 @@ import { User } from "../entity/User";
 import { kst } from "../util/chalkFormatters";
 import { metrics, metrics_prefix } from "../connect/prometheus";
 import { queueTransaction } from "../util/TransactionQueue";
+import { v4 as uuid } from "uuid";
+import { deadline } from "../util/prom";
 
 type CommonMeta = {
     metaname?: string
@@ -189,7 +191,11 @@ export class KristService {
                     const event = data as KristEvent;
                     if (event.event === "transaction" && event.transaction.type === "transfer") {
                         const trans = event.transaction;
-                        this.processTransaction(trans);
+                        try {
+                            this.processTransaction(trans);
+                        } catch (e) {
+                            logger.error(chalk`{bold Krist error processing transaction}: ${e}`);
+                        }
                     }
 
                     break;
@@ -227,8 +233,10 @@ export class KristService {
         // Check that we are registered to respond to this name
         if (!getConfig().krist.names.includes(trans.sent_name)) return;
 
+        const requestId = uuid();
+
         if (!trans.sent_metaname) {
-            return void await this.makeRefund(trans, "No username specified, send to username@" + trans.sent_name + ".kst");
+            return void await deadline(this.makeRefund(trans, "No username specified, send to username@" + trans.sent_name + ".kst", requestId), 5 * SECOND);
         };
 
         const user = await getConnection().manager.createQueryBuilder(User, "user")
@@ -236,8 +244,11 @@ export class KristService {
             .getOne();
 
         if (!user) {
-            return void await this.makeRefund(trans, "The user '" + trans.sent_metaname + "' does not exist");
+            return void await deadline(this.makeRefund(trans, "The user '" + trans.sent_metaname + "' does not exist", requestId), 5 * SECOND);
         }
+
+        const safeFrom = this.getSafeReturn(trans.from, this.parseCommonMeta(trans.metadata));
+        logger.info(chalk`Recieved ${kst(Math.floor(trans.value))} from {magenta ${safeFrom}} for user {cyan ${user.name}}`);
 
         await queueTransaction(() => getConnection().manager.transaction(async manager => {
             await manager.increment(User, { id: user.id }, "balance", 100*trans.value);
@@ -245,8 +256,7 @@ export class KristService {
         }))
         BalStream.next({ user: user.name })
 
-        const safeFrom = this.getSafeReturn(trans.from, this.parseCommonMeta(trans.metadata));
-        logger.info(chalk`Recieved ${kst(Math.floor(trans.value))} from {magenta ${safeFrom}} for user {cyan ${user.name}}`);
+        logger.info("Finished processing transaction " + requestId);
     }
 
     private async makeRequest(type: "me"): Promise<{ isGuest: true } | { isGuest: false, address: KristAddress }>;
@@ -254,7 +264,7 @@ export class KristService {
     private async makeRequest(type: "subscribe",   payload: { event: string }): Promise<{ subscription_level: string[] }>;
     private async makeRequest(type: "unsubscribe", payload: { event: string }): Promise<{ subscription_level: string[] }>;
     private async makeRequest(type: "make_transaction", payload: {
-        to: string, amount: number, metadata?: string
+        to: string, amount: number, metadata?: string, requestId: string
     }): Promise<{ transaction: KristTransaction }>;
     private async makeRequest(type: string, payload: Record<string, unknown> = {}): Promise<unknown> {
         const requestId = this.genID();
@@ -377,7 +387,7 @@ export class KristService {
         return this.walletTotalBalance.getValue();
     }
 
-    public async makeRefund(trans: KristTransaction, message: string) {
+    public async makeRefund(trans: KristTransaction, message: string, requestId: string) {
         const meta = this.parseCommonMeta(trans.metadata);
 
         try {
@@ -387,14 +397,15 @@ export class KristService {
                 metadata: this.encodeCommonMeta({
                     return: getConfig().krist.address,
                     message: message
-                })
+                }),
+                requestId
             })
         } catch (e) {
             logger.error(chalk`{bold Error making refund}: ${e}`)
         }
     }
 
-    public async makeWithdrawal(username: string, to: string, amount: number) {
+    public async makeWithdrawal(username: string, to: string, amount: number, requestId: string) {
         try {
             return await this.makeRequest("make_transaction", {
                 to: this.getSafeReturn(to, {}),
@@ -402,7 +413,8 @@ export class KristService {
                 metadata: this.encodeCommonMeta({
                     return: `${username}@${getConfig().krist.names[0]}.kst`.toLowerCase(),
                     message: "Thank you for using BustAKrist!"
-                })
+                }),
+                requestId
             })
         } catch (e) {
             logger.error(chalk`{bold Error making withdrawal}: ${e}`)

@@ -8,6 +8,9 @@ import { kst } from "../../util/chalkFormatters";
 import { queueTransaction } from "../../util/TransactionQueue";
 import { RequestHandler, RequestMessage, SocketUser } from "../socketUser";
 import { ErrorCode, ErrorDetail, RequestCode } from "../transportCodes";
+import { deadline } from "../../util/prom";
+import { SECOND } from "../../util/time";
+import { v4 as uuid } from "uuid";
 
 export class KristHandlers extends SocketUser {
     private static WithdrawSchema = new Schema({
@@ -48,10 +51,11 @@ export class KristHandlers extends SocketUser {
 
         try {
             const name = this.authedUser.name;
+            const reqId = uuid();
             await queueTransaction(() => getConnection().manager.transaction(async manager => {
                 await manager.decrement(User, { id: this.authedUser!.id }, "balance", amount);
                 await manager.increment(User, { id: this.authedUser!.id }, "totalOut", amount);
-                const tx = await KristService.instance.makeWithdrawal(name, data.to!, Math.floor(data.amount!));
+                const tx = await deadline(KristService.instance.makeWithdrawal(name, data.to!, Math.floor(data.amount!), reqId), 5 * SECOND);
                 if (!tx) {
                     throw new Error("Transaction failed");
                 }
